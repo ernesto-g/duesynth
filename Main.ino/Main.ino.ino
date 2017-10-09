@@ -27,7 +27,7 @@ void setup() {
   Serial.begin(9600);
   Serial.setTimeout(10);
   Serial1.begin(31250);
-  Serial1.setTimeout(10);
+  Serial1.setTimeout(0); // minimo 5ms
 
   //*********** PWMs ****************************
   pwm_pin34.start(680,340);
@@ -39,21 +39,27 @@ void setup() {
   pwm_pin38.start(680,340);
   pwm_pin40.start(680,340);
 
+  pinMode(2, OUTPUT); 
+
 }
 
 void loop() {
 
   unsigned char bufferMidiInternalKeyboard[32];
-  int c = Serial.readBytes(bufferMidiInternalKeyboard,32);
+  int c = Serial.readBytes(bufferMidiInternalKeyboard,32); // se bloquea el tiempo del timeout seteado
   if(c>0)
   {
     Serial.write(bufferMidiInternalKeyboard,c);    
   }
 
+    int v = analogRead(0); // tarda 6uS
+
   if(l)
   {
     Serial.write("hola\n");
-    pwm_pin34.set_duty(128);
+    digitalWrite(2, HIGH);
+    pwm_pin34.set_duty(128); // tarda 27.5uS. hace una division double, por eso tarda
+    digitalWrite(2, LOW);
     pwm_pin7.set_duty(128);
     pwm_pin6.set_duty(128);
     pwm_pin8.set_duty(128);
