@@ -76,22 +76,28 @@ namespace arduino_due
 
        uint32_t get_duty() { return _duty_; }
 
+       void set_duty_fast(uint32_t duty)
+       {
+          PWMC_SetDutyCycle(PWM_INTERFACE,pin_info::channel,duty);
+       }
+       
        bool set_duty(uint32_t duty /* 1e-8 secs. */)
        {
-   if(duty>_period_) return false;
+          if(duty>_period_) 
+              return false;
 
-   _duty_=duty;
-   PWMC_SetDutyCycle(
-     PWM_INTERFACE,
-     pin_info::channel,
-     static_cast<uint32_t>(
-       (static_cast<double>(duty)/100000000)/
-       pwm_core::tick_times[_clock_]
-     )
-   );
-       
-   return true;
+          _duty_=duty;
+         PWMC_SetDutyCycle(PWM_INTERFACE,pin_info::channel,
+           static_cast<uint32_t>(
+             (static_cast<double>(duty)/100000000)/
+             pwm_core::tick_times[_clock_]
+           )
+         );        
+         
+          return true;
        }
+
+
 
        uint32_t get_period() { return _period_; }
 
