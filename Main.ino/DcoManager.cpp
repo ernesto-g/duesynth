@@ -23,6 +23,7 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 #define EG_COUNTERS     2 // adsr 1 and adsr 2
 #define SAW_COUNTERS    3 // for ultrasaw
 #define TRIANGLE_COUNTERS 1
+#define METALIZER_STAGES  3
 
 #define ADSR1     0
 #define ADSR2     1
@@ -46,6 +47,7 @@ static volatile int phase2Value;
 
 static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
 static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
+static volatile signed int metalizerLevel[METALIZER_STAGES];
 
 
 // freq tables
@@ -153,6 +155,19 @@ void dcoUpdateMono(void)
     //__________
             
 
+
+  for(i=0; i<METALIZER_STAGES ; i++)
+  { 
+    if(accTri> (PWM_MAX_VALUE-metalizerLevel[i]) )
+    {
+      accTri = (2*(PWM_MAX_VALUE-metalizerLevel[i])) - accTri;
+    }
+    else if(accTri < metalizerLevel[i] )
+    {
+      accTri = (2*metalizerLevel[i]) - accTri;
+    }
+  }
+
   accSquare+=(PWM_MAX_VALUE/2);
   accSub+=(PWM_MAX_VALUE/2);
 
@@ -183,6 +198,11 @@ void dco_init(void)
   triangleDelta[0]=1;
   triangleCounters[0]=0;              
 
+  metalizerLevel[0] = 250;
+  metalizerLevel[1] = 180;
+  metalizerLevel[2] = 120;
+
+
   Timer3.attachInterrupt(dcoUpdateMono).setFrequency(72000).start(); // freq update: 72Khz
 
   flagSawPhaseChanged=0;
@@ -191,7 +211,7 @@ void dco_init(void)
   eg[0] = (PWM_MAX_VALUE/2);
   pwmForSquareValue=0;
   ultrasawForSawValue=0;
-  dco_setMIDInote(96); 
+  dco_setMIDInote(45); 
   //______
 
 }
