@@ -22,6 +22,7 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 #define SQUARE_COUNTERS 2 // square and sub
 #define EG_COUNTERS     2 // adsr 1 and adsr 2
 #define SAW_COUNTERS    3 // for ultrasaw
+#define TRIANGLE_COUNTERS 1
 
 #define ADSR1     0
 #define ADSR2     1
@@ -43,6 +44,9 @@ static volatile unsigned int ultrasawForSawValue;
 static volatile int phase1Value;
 static volatile int phase2Value;
 
+static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
+static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
+
 
 // freq tables
 static unsigned int TABLE_SQUARE_FREQ[] = {2618,2471,2333,2202,2078,1961,1851,1747,1649,1557,1469,1387,1309,1236,1166,1101,1039,981,926,874,825,778,735,693,655,618,583,550,520,490,463,437,412,389,367,347,327,309,292,275,260,245,231,218,206,195,184,173,164,154,146,138,130,123,116,109,103,97,92,87,82,77,73,69,65,61,58,55,52,49,46,43,41,39,36,34};
@@ -58,18 +62,18 @@ void dcoUpdateMono(void)
   unsigned char i;
   signed int accSquare=0;
   signed int accSaw=0;
-  signed int accTriangle=0;
+  signed int accTri=0;
   signed int accSub=0;
   
   // square
     squareCounters[0]++;
     if(squareCounters[0]<squareFreqMultiplierHalf[0])
     {
-        accSquare-= eg[0] ;      
+        accSquare-= (PWM_MAX_VALUE/2) ;      
     }
     else if(squareCounters[0]<squareFreqMultiplier[0])
     {
-        accSquare+= eg[0] ;            
+        accSquare+= (PWM_MAX_VALUE/2) ;            
     }
     else
     {
@@ -80,11 +84,11 @@ void dcoUpdateMono(void)
     squareCounters[1]++;
     if(squareCounters[1]<squareFreqMultiplierHalf[1])
     {
-        accSub-= eg[ADSR1] ;      
+        accSub-= (PWM_MAX_VALUE/2) ;      
     }
     else if(squareCounters[1]<squareFreqMultiplier[1])
     {
-        accSub+= eg[ADSR1] ;            
+        accSub+= (PWM_MAX_VALUE/2) ;            
     }
     else
     {
@@ -94,7 +98,6 @@ void dcoUpdateMono(void)
   // saw  
   for(i=0; i<3; i++)
   {
-    // saws  (falta multilpicacion de amplitud)
     sawCounters[i]++;
     if(sawCounters[i]>=0)
     {
@@ -121,19 +124,42 @@ void dcoUpdateMono(void)
   }
   
     // triangle
-    
-    
-    
-  
+    triangleCounters[0]++;
+    if(triangleDelta[0]==1)
+    {
+      // positive
+      accTri = ((2*PWM_MAX_VALUE)*triangleCounters[0])/(squareFreqMultiplier[0]);
+      if(triangleCounters[0]<(squareFreqMultiplier[0]>>1))
+      {
+      }
+      else
+      {
+          triangleDelta[0]=0; 
+      }
+    }
+    else
+    {
+      // negative
+      accTri = (2*PWM_MAX_VALUE) - ((2*PWM_MAX_VALUE)*triangleCounters[0])/(squareFreqMultiplier[0]);        
+      if(triangleCounters[0]<squareFreqMultiplier[0]) // paso la mitad
+      {
+      } 
+      else
+      {
+          triangleDelta[0]=1;
+          triangleCounters[0]=0;              
+      }
+    }
+    //__________
+            
 
   accSquare+=(PWM_MAX_VALUE/2);
   accSub+=(PWM_MAX_VALUE/2);
 
-  
   pwm_pin34.set_duty_fast(accSquare);
   pwm_pin36.set_duty_fast(accSaw);
-  pwm_pin38.set_duty_fast(accTriangle);
   pwm_pin40.set_duty_fast(accSub);
+  pwm_pin38.set_duty_fast(accTri);
 
   digitalWrite(2, LOW);
 
@@ -154,6 +180,8 @@ void dco_init(void)
   pwm_pin9.start(681,340);
 
   //pwm_pin34.set_duty_fast(143); // tarda 0.7uS  572 ok
+  triangleDelta[0]=1;
+  triangleCounters[0]=0;              
 
   Timer3.attachInterrupt(dcoUpdateMono).setFrequency(72000).start(); // freq update: 72Khz
 
@@ -162,7 +190,7 @@ void dco_init(void)
   //debug
   eg[0] = (PWM_MAX_VALUE/2);
   pwmForSquareValue=0;
-  ultrasawForSawValue=1023;
+  ultrasawForSawValue=0;
   dco_setMIDInote(96); 
   //______
 
