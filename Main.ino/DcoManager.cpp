@@ -59,7 +59,7 @@ static unsigned int TABLE_SQUARE_FREQ[] = {2618,2471,2333,2202,2078,1961,1851,17
 
 void dcoUpdateMono(void)
 {
-  digitalWrite(2, HIGH);
+  //digitalWrite(2, HIGH);
 
   unsigned char i;
   signed int accSquare=0;
@@ -176,7 +176,7 @@ void dcoUpdateMono(void)
   pwm_pin40.set_duty_fast(accSub);
   pwm_pin38.set_duty_fast(accTri);
 
-  digitalWrite(2, LOW);
+  //digitalWrite(2, LOW);
 
 }
 

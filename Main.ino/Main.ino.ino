@@ -3,12 +3,21 @@
 #include "pwm_lib.h"
 #include "DcoManager.h"
 #include "AnalogIns.h"
+#include "MIDIReception.h"
 using namespace arduino_due::pwm_lib;
 
 volatile boolean l=0;
-void tmr2Handler()
+volatile int count=1000;
+void sysTick()
 {
-  l = !l;
+  count--;
+  if(count<-0)
+  {
+    l = 1;
+    count=1000;
+  }
+
+  midircv_sysTick();
 }
 
 
@@ -20,35 +29,40 @@ void setup() {
   
   //************* UARTS **************************  
   Serial.begin(9600);
-  Serial.setTimeout(10);
-  Serial1.begin(31250);
-  Serial1.setTimeout(0); // minimo 5ms
+  Serial.setTimeout(0);
+  midircv_init();
 
   //************* ANALOGS ************************
   ain_init();
 
+  //************* SYSTICK ************************
+  Timer2.attachInterrupt(sysTick).setFrequency(1000).start(); // systick 1ms
 
-  // debug
-  Timer2.attachInterrupt(tmr2Handler).setFrequency(1).start(); // freq update: 72Khz
   
   pinMode(2, OUTPUT); 
 }
 
 void loop() {
 
+  /*
   unsigned char bufferMidiInternalKeyboard[32];
-  int c = Serial.readBytes(bufferMidiInternalKeyboard,32); // se bloquea el tiempo del timeout seteado
+  digitalWrite(2, HIGH);
+  int c = Serial.readBytes(bufferMidiInternalKeyboard,1); // 12uS
+  digitalWrite(2, LOW);
   if(c>0)
   {
     Serial.write(bufferMidiInternalKeyboard,c);    
-  }
+  }*/
+  
 
   ain_state_machine();
-
+  midircv_stateMachine();
+  
   if(l)
   {
     l=0;
     uint16_t* values = ain_getValues();
+    /*
     Serial.write("ANALOG 0:");
     Serial.print(values[0],DEC);
     Serial.write("\n");
@@ -60,7 +74,7 @@ void loop() {
     Serial.write("ANALOG 11:");
     Serial.print(values[11],DEC);
     Serial.write("\n");
-
+    */
 
     //digitalWrite(2, LOW);
   }
