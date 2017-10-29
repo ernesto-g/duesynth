@@ -4,6 +4,7 @@
 #include "DcoManager.h"
 #include "AnalogIns.h"
 #include "MIDIReception.h"
+#include "MIDIManager.h"
 using namespace arduino_due::pwm_lib;
 
 volatile boolean l=0;
@@ -31,13 +32,15 @@ void setup() {
   Serial.begin(9600);
   Serial.setTimeout(0);
   midircv_init();
-
+  
   //************* ANALOGS ************************
   ain_init();
 
   //************* SYSTICK ************************
   Timer2.attachInterrupt(sysTick).setFrequency(1000).start(); // systick 1ms
 
+  //************* SYNTH **************************
+  midi_init();
   
   pinMode(2, OUTPUT); 
 }

@@ -30,6 +30,13 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 
 #define AN_MAX_VALUE  1023
 
+#define TABLE_SIZE                3072
+#define LFO_WAVE_TYPE_SINE        0
+#define LFO_WAVE_TYPE_TRIANGLE    1
+#define LFO_WAVE_TYPE_EXP         2
+#define LFO_WAVE_TYPE_SQUARE      3
+
+
 // private variables
 static volatile unsigned int squareCounters[SQUARE_COUNTERS];
 static volatile unsigned int squareFreqMultiplierHalf[SQUARE_COUNTERS];
@@ -59,7 +66,7 @@ static volatile int lfoFreqMultiplier;
 // freq tables
 static unsigned int TABLE_SQUARE_FREQ[] = {2618,2471,2333,2202,2078,1961,1851,1747,1649,1557,1469,1387,1309,1236,1166,1101,1039,981,926,874,825,778,735,693,655,618,583,550,520,490,463,437,412,389,367,347,327,309,292,275,260,245,231,218,206,195,184,173,164,154,146,138,130,123,116,109,103,97,92,87,82,77,73,69,65,61,58,55,52,49,46,43,41,39,36,34};
 
-#define TABLE_SIZE  3072
+
 const unsigned char SINETABLE[TABLE_SIZE] PROGMEM = {0x80,0x80,0x80,0x80,0x81,0x81,0x81,0x81,0x82,0x82,0x82,0x82,0x83,0x83,0x83,0x83,0x84,0x84,0x84,0x84,0x85,0x85,0x85,0x85,0x86,0x86,0x86,0x87,0x87,0x87,0x87,0x88,
 0x88,0x88,0x88,0x89,0x89,0x89,0x89,0x8a,0x8a,0x8a,0x8a,0x8b,0x8b,0x8b,0x8b,0x8c,0x8c,0x8c,0x8d,0x8d,0x8d,0x8d,0x8e,0x8e,0x8e,0x8e,0x8f,0x8f,0x8f,0x8f,0x90,0x90,
 0x90,0x90,0x91,0x91,0x91,0x91,0x92,0x92,0x92,0x92,0x93,0x93,0x93,0x93,0x94,0x94,0x94,0x95,0x95,0x95,0x95,0x96,0x96,0x96,0x96,0x97,0x97,0x97,0x97,0x98,0x98,0x98,
@@ -475,10 +482,7 @@ void dcoUpdateMono(void)
 
 }
 
-#define LFO_WAVE_TYPE_SINE        0
-#define LFO_WAVE_TYPE_TRIANGLE    1
-#define LFO_WAVE_TYPE_EXP         2
-#define LFO_WAVE_TYPE_SQUARE      3
+
 
 
 static void dcoUpdateLFO(void)
@@ -600,5 +604,27 @@ void dco_setMIDInote(int note)
           
   }
     
+}
+
+void dco_setGate(byte val)
+{
+    if(val==1)
+    {
+        // gate ON
+    }
+    else
+    {
+      // gate OFF
+    }
+}
+
+void dco_setTrigger(byte velocity)
+{
+  
+}
+
+void dco_lfoReset(void)
+{
+  
 }
 
