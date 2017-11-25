@@ -23,6 +23,10 @@
 #define TOUCH_STATE_ANALIZE 4
 #define TOUCH_STATE_WAIT_RELEASE  5
 #define TOUCH_STATE_WIDGET_EVENT  6
+#define TOUCH_STATE_WAIT_FOR_NEXT_TOUCH_CHECK 7
+
+#define TOUCH_SCAN_PERIOD   50 // period for touch scanning. in ms
+
 
 static void startDrawingWidget(Widget* w);
 static int runDrawingWidget(Widget* w);
@@ -34,6 +38,7 @@ extern URTouch  myTouch;
 static Widget* widgets[WIDGETS_LEN];
 static int stateDraw;
 static int indexDraw;
+static volatile int counterWaitForNextTouch;
 
 void win_init(void)
 {
@@ -45,10 +50,16 @@ void win_init(void)
   stateDraw = STATE_DRAW_IDLE;
 }
 
+void win_sysTick(void)
+{
+    counterWaitForNextTouch--;
+}
+
 void win_addWidget(int i, Widget* w)
 {
     widgets[i] = w;
 }
+
 
 
 
@@ -149,8 +160,8 @@ void win_touchManager(void)
     }
     case TOUCH_STATE_READ:
     {
-      //x: entre 5 y 319
-      //y: entre 224 y 13
+        //x: entre 5 y 319
+        //y: entre 224 y 13
         myTouch.read();
         touchState = TOUCH_STATE_READ_X;
         break;
@@ -189,15 +200,11 @@ void win_touchManager(void)
     }
     case TOUCH_STATE_ANALIZE:
     {
-      Serial.write("TOUCH:");
-      Serial.print(x,DEC);
-      Serial.write(",");
-      Serial.print(y,DEC);
-      Serial.write("\n");
-    
-        Widget* w = getPressedWidget(x,y);
+        w = getPressedWidget(x,y);
         if(w==NULL)
-          touchState = TOUCH_STATE_WAIT_RELEASE;
+        {
+            touchState = TOUCH_STATE_WAIT_FOR_NEXT_TOUCH_CHECK;
+            counterWaitForNextTouch=TOUCH_SCAN_PERIOD;          }
         else
           touchState = TOUCH_STATE_WIDGET_EVENT;
         break;
@@ -205,37 +212,30 @@ void win_touchManager(void)
     case TOUCH_STATE_WAIT_RELEASE:
     {
       if(myTouch.dataAvailable()==0)
-        touchState = TOUCH_STATE_IDLE;        
+      {
+        touchState = TOUCH_STATE_WAIT_FOR_NEXT_TOUCH_CHECK;
+        counterWaitForNextTouch=TOUCH_SCAN_PERIOD;       
+      } 
       break;
     }
     case TOUCH_STATE_WIDGET_EVENT:
     {
-        Serial.write("TOUCH sobre widget!\n");
         if(generateTouchEventForWidget(w,x,y))
           touchState = TOUCH_STATE_WAIT_RELEASE;
         else
-          touchState = TOUCH_STATE_IDLE;
+        {
+          touchState = TOUCH_STATE_WAIT_FOR_NEXT_TOUCH_CHECK;
+          counterWaitForNextTouch=TOUCH_SCAN_PERIOD;                 
+        }
         break;
     }
+    case TOUCH_STATE_WAIT_FOR_NEXT_TOUCH_CHECK:
+    {
+      if(counterWaitForNextTouch<=0)
+        touchState = TOUCH_STATE_IDLE; 
+      break;
+    }
   }
-  
-      //digitalWrite(41, HIGH);
-
-      /*
-      // lectura 3ms
-      myTouch.read();
-      int x=myTouch.getX();
-      int y=myTouch.getY();
-      //_____________
-
-     if( (controlAttack.obj.state&WIDGET_STATE_REDRAW)==0)
-     {
-        controlAttack.value = 240 - y;
-        controlAttack.obj.state|=WIDGET_STATE_REDRAW;
-     }
-     */
-
-
 }
 
 static int generateTouchEventForWidget(Widget* w,int x, int y)

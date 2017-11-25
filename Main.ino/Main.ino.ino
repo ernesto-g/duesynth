@@ -31,6 +31,7 @@ void sysTick()
   }
 
   midircv_sysTick();
+  win_sysTick();
 }
 
 
@@ -89,7 +90,7 @@ void setup() {
   controlAttack.obj.h = 171;
   controlAttack.obj.touchAreaX0=0;
   controlAttack.obj.touchAreaX1=80;
-  controlAttack.obj.touchAreaY0=50;
+  controlAttack.obj.touchAreaY0=25;
   controlAttack.obj.touchAreaY1=220;
   
   controlAttack.obj.type = WIDGET_TYPE_VERTICAL_CONTROL;

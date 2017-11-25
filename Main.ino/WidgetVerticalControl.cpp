@@ -19,8 +19,10 @@ int widvc_runDrawingVerticalControl(WidgetVerticalControl* w)
   value = w->value;
 
 
-  if(value<y || value > (y+171-20) )
+  if(value<y)  
     value = y;
+  if( value > (y+171-20) )
+    value = (y+171-20) ;
   
     switch(state)
     {
@@ -41,11 +43,8 @@ int widvc_runDrawingVerticalControl(WidgetVerticalControl* w)
       }
       case 2: // draw line
       {
-        /*
         myGLCD.drawBitmapStart(x,y, 11, 171,img_getImageControlBar1());
-        state =3;
-        */
-        state =4;
+        state =3; 
         break;
       }
       case 3: // draw line
@@ -78,12 +77,12 @@ int widvc_runDrawingVerticalControl(WidgetVerticalControl* w)
 
 int widvc_touchEvent(WidgetVerticalControl* w, int x, int y)
 {
-     if( (w->obj.state&WIDGET_STATE_REDRAW)==0)
-     {
-        w->value = 240 - y;
-        w->obj.state|=WIDGET_STATE_REDRAW;
-     }
-  return 0; // dont wait touch release to generate another event
+    if( (w->obj.state&WIDGET_STATE_REDRAW)==0)
+    {
+      w->value = y;
+      w->obj.state|=WIDGET_STATE_REDRAW;
+    }
+    return 0; // dont wait touch release to generate another event
 }
 
 

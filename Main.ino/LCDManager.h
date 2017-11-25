@@ -52,6 +52,8 @@ void win_init(void);
 void win_addWidget(int i, Widget* w);
 void win_drawAll(void);
 void win_touchManager(void);
+void win_sysTick(void);
+
 
 
 
