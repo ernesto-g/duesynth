@@ -1,12 +1,28 @@
 #include "UTFT/UTFT.h"
 #include "LCDManager.h"
 #include "Images.h"
+#include "WidgetVerticalControl.h"
 
 #define CONTROL_H   171
 
 extern UTFT myGLCD;
 
 static int state;
+
+void widvc_initWidget(WidgetVerticalControl* w,int x, int y,int value)
+{
+  w->obj.x = x;
+  w->obj.y = y;
+  w->obj.w = 50;
+  w->obj.h = 171;
+  w->obj.touchAreaX0=x - 30;
+  w->obj.touchAreaX1=x+50;
+  w->obj.touchAreaY0=y-25;
+  w->obj.touchAreaY1=y+171;
+  w->obj.type = WIDGET_TYPE_VERTICAL_CONTROL;
+  w->obj.state = WIDGET_STATE_REDRAW;
+  widvc_setMidiValue(w,value);
+} 
 
 void widvc_startDrawingVerticalControl(WidgetVerticalControl* w)
 {

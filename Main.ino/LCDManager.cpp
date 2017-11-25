@@ -105,9 +105,9 @@ void win_drawAll(void)
           indexDraw++;
           if(indexDraw>=WIDGETS_LEN)
           {
-            indexDraw=0;
-            stateDraw = STATE_DRAW_CHECK_WIDGET;
+            indexDraw=0;            
           }
+          stateDraw = STATE_DRAW_CHECK_WIDGET;
           break;      
       }
     }
