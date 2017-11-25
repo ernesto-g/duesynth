@@ -286,6 +286,7 @@ void dco_setPhaseForUltrasaw(unsigned int analogValue)
 
 void dco_setMetalizerForTriangle(unsigned int analogValue)
 {
+  /*
     if(analogValue<(AN_MAX_VALUE/3))
     {
       metalizerLevel[0] = (MET_0_MAX*analogValue)/(AN_MAX_VALUE/3);
@@ -304,6 +305,7 @@ void dco_setMetalizerForTriangle(unsigned int analogValue)
       metalizerLevel[1] = MET_1_MAX;
       metalizerLevel[2] = hacer cuenta;            
     }
+    */
 }
 
 void dco_setMIDInote(int note)
