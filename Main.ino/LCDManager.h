@@ -17,6 +17,7 @@ struct S_WidgetVerticalControl
 {
   Widget obj;
   int value;
+  int prevValue;
 };
 typedef struct S_WidgetVerticalControl WidgetVerticalControl;
 

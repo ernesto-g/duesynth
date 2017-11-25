@@ -16,6 +16,8 @@ UTFT myGLCD(ILI9325D_16,30,31,32,33);
 URTouch  myTouch( 10, 5, 4, 3, 2);
 //_________________________
 
+#include "WidgetVerticalControl.h"
+
 using namespace arduino_due::pwm_lib;
 
 
@@ -95,7 +97,7 @@ void setup() {
   
   controlAttack.obj.type = WIDGET_TYPE_VERTICAL_CONTROL;
   controlAttack.obj.state = WIDGET_STATE_REDRAW;
-  controlAttack.value = 100;
+  widvc_setMidiValue(&controlAttack,127);
   win_addWidget(0, (Widget*)&controlAttack);
   
 }
@@ -127,6 +129,13 @@ void loop() {
     */
 
     //digitalWrite(2, LOW);
+
+    int potVal = widvc_getMidiValue(&controlAttack);
+    Serial.write("ATTACK:");
+    Serial.print(potVal,DEC);
+    Serial.write("\n");
+    
+    
   }
   else
   {
