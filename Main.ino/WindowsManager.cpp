@@ -33,6 +33,11 @@ void wm_showBoot(void)
 
 void wm_showMainWindow(void)
 { 
+  myGLCD.fillScr(0x42, 0x42, 0x42);    
+  myGLCD.drawBitmapStart(0,0, 320,36,img_getImageTabs(0));
+  while(myGLCD.drawBitmapRun()==0);
+  
+    
   widvc_initWidget(&controlAttack1,40,50,64);
   widvc_initWidget(&controlDecay1,110,50,64);
   widvc_initWidget(&controlSustain1,180,50,64);
