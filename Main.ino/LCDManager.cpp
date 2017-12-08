@@ -6,7 +6,7 @@
 #include "LCDManager.h"
 #include "URTouch/URTouch.h"
 #include "WidgetVerticalControl.h"
-
+#include "WidgetTabs.h"
 
 #define WIDGETS_LEN 16
 
@@ -60,6 +60,15 @@ void win_addWidget(int i, Widget* w)
     widgets[i] = w;
 }
 
+void win_hideWidget(Widget* w)
+{
+  w->state|=WIDGET_STATE_HIDDEN;
+}
+void win_showWidget(Widget* w)
+{
+  w->state&=(~WIDGET_STATE_HIDDEN);
+  w->state|=WIDGET_STATE_REDRAW;
+}
 
 
 
@@ -75,7 +84,7 @@ void win_drawAll(void)
       }
       case STATE_DRAW_CHECK_WIDGET:
       {
-        if(widgets[indexDraw]!=NULL && ((widgets[indexDraw]->state&WIDGET_STATE_REDRAW)==WIDGET_STATE_REDRAW) ) 
+        if(widgets[indexDraw]!=NULL && ((widgets[indexDraw]->state&WIDGET_STATE_REDRAW)==WIDGET_STATE_REDRAW) && ((widgets[indexDraw]->state&WIDGET_STATE_HIDDEN)!=WIDGET_STATE_HIDDEN) ) 
         {
             stateDraw = STATE_DRAW_START;     
         }
@@ -123,6 +132,11 @@ static void startDrawingWidget(Widget* w)
       widvc_startDrawingVerticalControl((WidgetVerticalControl*)w);
       break;
     }
+    case WIDGET_TYPE_TABS:
+    {
+      widtab_startDrawingTabs((WidgetTabs*)w);
+      break;
+    }
   }
 }
 
@@ -133,6 +147,11 @@ static int runDrawingWidget(Widget* w)
     case WIDGET_TYPE_VERTICAL_CONTROL:
     {
       return widvc_runDrawingVerticalControl((WidgetVerticalControl*)w);
+      break;
+    }
+    case WIDGET_TYPE_TABS:
+    {
+      return widtab_runDrawingTabs((WidgetTabs*)w);
       break;
     }
   }  
@@ -247,6 +266,11 @@ static int generateTouchEventForWidget(Widget* w,int x, int y)
       return widvc_touchEvent((WidgetVerticalControl*)w,x,y);
       break;
     }
+    case WIDGET_TYPE_TABS:
+    {
+      return widtab_touchEvent((WidgetTabs*)w,x,y);
+      break;
+    }    
   }  
     return 1; // wait release 
 }
@@ -258,7 +282,7 @@ static Widget* getPressedWidget(int x, int y)
   for(i=0; i<WIDGETS_LEN; i++)
   {
     w = widgets[i];
-    if(w!=NULL)
+    if(w!=NULL && ((w->state&WIDGET_STATE_HIDDEN)!=WIDGET_STATE_HIDDEN) )
     {
         if(x >= w->touchAreaX0 && x<=w->touchAreaX1)
         {

@@ -81,8 +81,7 @@ void setup() {
 
 
   // init screen
-  wm_showMainWindow();
-  
+  wm_showBoot();  
 }
 
 void loop() {

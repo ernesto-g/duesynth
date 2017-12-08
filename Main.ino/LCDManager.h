@@ -37,10 +37,20 @@ struct S_WidgetImage
 };
 typedef struct S_WidgetImage WidgetImage;
 
+struct S_WidgetTabs
+{
+  Widget obj;
+  int currentTabNumber;
+  void (*callbackTouchEvent)(int tabNumber, int prevTabNumber);
+};
+typedef struct S_WidgetTabs WidgetTabs;
+
+
+
 #define WIDGET_TYPE_VERTICAL_CONTROL  0
 #define WIDGET_TYPE_BUTTON            1
 #define WIDGET_TYPE_IMAGE             2
-
+#define WIDGET_TYPE_TABS              3
 
 
 #define WIDGET_STATE_IDLE     0
@@ -54,6 +64,10 @@ void win_addWidget(int i, Widget* w);
 void win_drawAll(void);
 void win_touchManager(void);
 void win_sysTick(void);
+
+void win_hideWidget(Widget* w);
+void win_showWidget(Widget* w);
+
 
 
 
