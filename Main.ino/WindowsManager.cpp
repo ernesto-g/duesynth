@@ -5,6 +5,7 @@
 #include "URTouch/URTouch.h"
 #include "LCDManager.h"
 
+#include "WindowsManager.h"
 #include "WidgetVerticalControl.h"
 #include "WidgetTabs.h"
 
@@ -97,10 +98,6 @@ static void showADSR2(void)
 
 static void eventTabPressed(int tabNumber, int prevTabNumber)
 {
-  //Serial.write("TAB EVENT");
-  //Serial.print(tabNumber,DEC);
-  //Serial.print(prevTabNumber,DEC);
-
   myGLCD.setColor(0x42,0x42,0x42); 
     
   switch(prevTabNumber)
@@ -146,4 +143,23 @@ static void eventTabPressed(int tabNumber, int prevTabNumber)
     }    
   }
 }
+
+
+int wm_getControlMidiValueById(int controlId)
+{
+  switch(controlId)
+  {
+      case WIN_MAN_CONTROL_ATTACK1: return widvc_getMidiValue(&controlAttack1);
+      case WIN_MAN_CONTROL_DECAY1: return widvc_getMidiValue(&controlDecay1);
+      case WIN_MAN_CONTROL_SUSTAIN1: return widvc_getMidiValue(&controlSustain1);
+      case WIN_MAN_CONTROL_RELEASE1: return widvc_getMidiValue(&controlRelease1);
+      
+      case WIN_MAN_CONTROL_ATTACK2: return widvc_getMidiValue(&controlAttack2);
+      case WIN_MAN_CONTROL_DECAY2: return widvc_getMidiValue(&controlDecay2);
+      case WIN_MAN_CONTROL_SUSTAIN2: return widvc_getMidiValue(&controlSustain2);
+      case WIN_MAN_CONTROL_RELEASE2: return widvc_getMidiValue(&controlRelease2);
+  }
+  return -1;
+}
+
 

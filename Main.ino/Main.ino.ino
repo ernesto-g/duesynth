@@ -17,6 +17,7 @@ URTouch  myTouch( 10, 5, 4, 3, 2);
 //_________________________
 
 #include "WindowsManager.h"
+#include "FrontPanel.h"
 
 using namespace arduino_due::pwm_lib;
 
@@ -74,14 +75,14 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
   win_init();
 
-  
-  
   pinMode(41, OUTPUT); //debug
   digitalWrite(41, LOW);  
 
-
   // init screen
   wm_showBoot();  
+  
+  fp_init();
+  
 }
 
 void loop() {
@@ -91,6 +92,7 @@ void loop() {
 
   ain_state_machine();
   midircv_stateMachine();
+  fp_stateMachine();
   
   if(l)
   {
