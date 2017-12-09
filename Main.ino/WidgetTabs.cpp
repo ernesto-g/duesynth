@@ -85,6 +85,7 @@ int widtab_touchEvent(WidgetTabs* w,int x,int y)
       if(w->callbackTouchEvent!=NULL)
       {
         w->callbackTouchEvent(w->currentTabNumber,prevTab);
+        w->obj.state|= WIDGET_STATE_REDRAW;
       }
     }
     

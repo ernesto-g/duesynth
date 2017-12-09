@@ -125,4 +125,9 @@ int widvc_touchEvent(WidgetVerticalControl* w, int x, int y)
     return 0; // dont wait touch release to generate another event
 }
 
+void widvc_clearWidgetArea(WidgetVerticalControl* w)
+{
+  // delete all
+   myGLCD.fillRect(w->obj.x-14, w->obj.y, w->obj.x+33, w->obj.y+CONTROL_H);
+}
 

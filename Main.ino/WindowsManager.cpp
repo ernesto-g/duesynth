@@ -97,22 +97,36 @@ static void showADSR2(void)
 
 static void eventTabPressed(int tabNumber, int prevTabNumber)
 {
+  //Serial.write("TAB EVENT");
+  //Serial.print(tabNumber,DEC);
+  //Serial.print(prevTabNumber,DEC);
+
+  myGLCD.setColor(0x42,0x42,0x42); 
+    
   switch(prevTabNumber)
   {
     case 0:
     {
       win_hideWidget((Widget*)&controlAttack1);
+      widvc_clearWidgetArea(&controlAttack1);
       win_hideWidget((Widget*)&controlDecay1);
+      widvc_clearWidgetArea(&controlDecay1);
       win_hideWidget((Widget*)&controlSustain1);
-      win_hideWidget((Widget*)&controlRelease1); 
+      widvc_clearWidgetArea(&controlSustain1);
+      win_hideWidget((Widget*)&controlRelease1);
+      widvc_clearWidgetArea(&controlRelease1);
       break;
     }
     case 1:
     {
       win_hideWidget((Widget*)&controlAttack2);
+      widvc_clearWidgetArea(&controlAttack2);
       win_hideWidget((Widget*)&controlDecay2);
+      widvc_clearWidgetArea(&controlDecay2);
       win_hideWidget((Widget*)&controlSustain2);
-      win_hideWidget((Widget*)&controlRelease2); 
+      widvc_clearWidgetArea(&controlSustain2);
+      win_hideWidget((Widget*)&controlRelease2);
+      widvc_clearWidgetArea( &controlRelease2);
       break;
     }    
   }
