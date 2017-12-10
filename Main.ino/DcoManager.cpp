@@ -49,6 +49,7 @@ static volatile int flagSawPhaseChanged;
 static volatile unsigned int ultrasawForSawValue;
 static volatile int phase1Value;
 static volatile int phase2Value;
+static volatile int flagSubOctave;
 
 static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
 static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
@@ -255,6 +256,7 @@ void dco_init(void)
   Timer4.attachInterrupt(dcoUpdateLFO).setFrequency(1536).start(); // freq update: 1536Hz
 
   flagSawPhaseChanged = 0;
+  flagSubOctave=0;
 
   //debug
  // eg[0] = (PWM_MAX_VALUE / 2);
@@ -272,8 +274,12 @@ void dco_setPwmForSquare(unsigned int analogValue)
 
   pwmForSquareValue = analogValue;
 }
+void dco_setEnvAmtForSquare(unsigned int analogValue)
+{
+  
+}
 
-void dco_setPhaseForUltrasaw(unsigned int analogValue)
+void dco_setPhaseForUltrasaw(unsigned int analogValue) // NO VA!!!
 {
   unsigned int percentValue =    (90 * analogValue) / AN_MAX_VALUE   ;
 
@@ -307,6 +313,26 @@ void dco_setMetalizerForTriangle(unsigned int analogValue)
     }
     */
 }
+void dco_setEnvAmtForTriangle(unsigned int analogValue)
+{
+  
+}
+
+void dco_setSubOctave(int flag2Octv)
+{
+  flagSubOctave = flag2Octv;
+}
+
+void dco_setUltraSawAmt(unsigned int analogValue)
+{
+  
+}
+
+void dco_setUltraSawRate(unsigned int analogValue)
+{
+  
+}
+
 
 void dco_setMIDInote(int note)
 {
@@ -326,6 +352,9 @@ void dco_setMIDInote(int note)
 
     // set sub
     signed int noteSub = note - 12;
+    if(flagSubOctave)
+      noteSub = noteSub - 12; // octave:-2
+      
     if (noteSub >= 0)
     {
       f = TABLE_SQUARE_FREQ[noteSub];
@@ -351,7 +380,7 @@ void dco_setGate(byte val)
   }
 }
 
-void dco_setTrigger(byte velocity)// 0...127
+void dco_setTrigger(unsigned char velocity)// 0...127
 {
 
 }
@@ -361,12 +390,12 @@ void dco_lfoReset(void)
   lfoCounter = 0;
 }
 
-void dco_lfoFreq(byte value) // 1 to 60 (0.5hz to 30hz)
+void dco_lfoFreq(unsigned char value) // 1 to 60 (0.5hz to 30hz)
 {
   lfoFreqMultiplier = value;
 }
 
-void dco_lfoSetWaveType(byte type)
+void dco_lfoSetWaveType(unsigned char type)
 {
     lfoWaveType=type;
 }

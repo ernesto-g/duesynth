@@ -34,6 +34,7 @@ void sysTick()
 
   midircv_sysTick();
   win_sysTick();
+  fp_sysTick();
 }
 
 void setup() {
