@@ -5,6 +5,8 @@
 #include "AnalogIns.h"
 #include "MIDIReception.h"
 #include "MIDIManager.h"
+#include "AdsrManager.h"
+
 
 // LCD and Touch libraries
 #include "UTFT/UTFT.h"
@@ -54,6 +56,7 @@ void setup() {
   Timer2.attachInterrupt(sysTick).setFrequency(1000).start(); // systick 1ms
 
   //************* SYNTH **************************
+  adsr_init();
   midi_init();
   
   //************** LCD and TOUCH *****************

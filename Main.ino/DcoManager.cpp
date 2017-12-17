@@ -3,6 +3,7 @@
 #include "pwm_lib.h"
 #include "DcoManager.h"
 #include "WaveTables.h"
+#include "AdsrManager.h"
 using namespace arduino_due::pwm_lib;
 
 // PWM pins
@@ -11,8 +12,7 @@ pwm<pwm_pin::PWML1_PC4> pwm_pin36;
 pwm<pwm_pin::PWML2_PC6> pwm_pin38;
 pwm<pwm_pin::PWML3_PC8> pwm_pin40;
 pwm<pwm_pin::PWML4_PC21> pwm_pin9;
-pwm<pwm_pin::PWML5_PC22> pwm_pin8;
-pwm<pwm_pin::PWML6_PC23> pwm_pin7;
+
 pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 
 // defines
@@ -224,6 +224,9 @@ static void dcoUpdateLFO(void)
       break;
 
   }
+
+  adsr_stateMachineTick();
+  
 }
 
 void dco_init(void)
@@ -234,9 +237,9 @@ void dco_init(void)
   pwm_pin38.start(681, 340);
   pwm_pin40.start(681, 340);
 
-  pwm_pin7.start(681, 340);
+
   pwm_pin6.start(681, 340);
-  pwm_pin8.start(681, 340);
+
   pwm_pin9.start(681, 340);
 
   //pwm_pin34.set_duty_fast(143); // tarda 0.7uS  572 ok
@@ -373,16 +376,21 @@ void dco_setGate(byte val)
   if (val == 1)
   {
     // gate ON
+    adsr_gateOnEvent();
+    //...
   }
   else
   {
     // gate OFF
+    adsr_gateOffEvent();
+    //...    
   }
 }
 
 void dco_setTrigger(unsigned char velocity)// 0...127
 {
-
+    adsr_triggerEvent(velocity);
+    //...
 }
 
 void dco_lfoReset(void)

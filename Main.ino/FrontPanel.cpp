@@ -78,6 +78,12 @@ void fp_stateMachine(void)
     // void dco_setSubOctave(int flag2Octv) 
 }
 
+/*
+ * void adsr_setAnalogAttackRate(int i, int value);
+void adsr_setAnalogDecayRate(int i, int value);
+void adsr_setAnalogReleaseRate(int i, int value);
+void adsr_setAnalogSustainValue(int i, int value);
+ */
 static void assignMidiValue(int indexControl,int midiValue)
 {
   switch(indexControl)
