@@ -8,8 +8,8 @@ void adsr_gateOffEvent(void);
 void adsr_triggerEvent(int vel);
 
 
-void adsr_setAnalogAttackRate(int i, int value);
-void adsr_setAnalogDecayRate(int i, int value);
-void adsr_setAnalogReleaseRate(int i, int value);
-void adsr_setAnalogSustainValue(int i, int value);
+void adsr_setMidiAttackRate(int i, int value);
+void adsr_setMidiDecayRate(int i, int value);
+void adsr_setMidiReleaseRate(int i, int value);
+void adsr_setMidiSustainValue(int i, int value);
 

@@ -59,7 +59,7 @@ static volatile int lfoCounter;
 static volatile int lfoWaveType;
 static volatile int lfoFreqMultiplier;
 
-
+static volatile int adsrDivider=0;
 
 
 // freq tables
@@ -189,6 +189,13 @@ void dcoUpdateMono(void)
 
   //digitalWrite(2, LOW);
 
+  adsrDivider++;
+  if(adsrDivider>=5)
+  {
+    adsrDivider=0;
+    adsr_stateMachineTick(); //14,4Khz
+  }
+
 }
 
 
@@ -225,7 +232,7 @@ static void dcoUpdateLFO(void)
 
   }
 
-  adsr_stateMachineTick();
+  
   
 }
 

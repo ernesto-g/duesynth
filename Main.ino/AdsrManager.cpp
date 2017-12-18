@@ -3,8 +3,7 @@
 
 using namespace arduino_due::pwm_lib;
 
-#define PWM_MAX_VALUE 572
-#define AN_MAX_VALUE  4095
+#define PWM_MAX_VALUE 508  // 127*4 (a lower value is used so counters can add or substract a 4 value)
 
 #define ATTACK_MAX_VALUE  (PWM_MAX_VALUE) 
 #define SUSTAIN_MAX_VALUE  (PWM_MAX_VALUE) 
@@ -31,6 +30,9 @@ static int volatile decayRate[ADSR_LEN];
 static int volatile sustainValue[ADSR_LEN];
 static int volatile releaseRate[ADSR_LEN];
 
+static int volatile attackRateCounter[ADSR_LEN];
+static int volatile decayRateCounter[ADSR_LEN];
+static int volatile releaseRateCounter[ADSR_LEN];
 
 // Private functions
 static void setAdsrPwmValue(int i, int value);
@@ -47,10 +49,15 @@ void adsr_init(void)
     
     adsrValue[i] = 0;
 
-    attackRate[i]=1;
-    decayRate[i]=1;
+    attackRate[i]=64;
+    decayRate[i]=64;
     sustainValue[i] = ATTACK_MAX_VALUE/2;
-    releaseRate[i]=1;
+    releaseRate[i]=64;
+
+    attackRateCounter[i]=attackRate[i];
+    decayRateCounter[i]=decayRate[i];
+    releaseRateCounter[i]=releaseRate[i];
+    
   }
 }
 
@@ -64,6 +71,7 @@ void adsr_gateOffEvent(void)
    int i;
   for(i=0; i<ADSR_LEN; i++)
   {
+      releaseRateCounter[i] = releaseRate[i];
       state[i] = STATE_RELEASE;
   }
 }
@@ -79,6 +87,7 @@ void adsr_triggerEvent(int vel) // vel can be used to modulate attack rate
       adsrValue[i]=0;
       setAdsrPwmValue(i,adsrValue[i]);
     }
+    attackRateCounter[i]=attackRate[i];
     state[i] = STATE_ATTACK;
   }
 }
@@ -91,7 +100,7 @@ static void setAdsrPwmValue(int i, int value)
     pwm_pin8.set_duty_fast(value);
 }
 
-void adsr_stateMachineTick(void) // freq update: 1536Hz
+void adsr_stateMachineTick(void) // freq update: 14,4Khz
 {
   int i;
   for(i=0; i<ADSR_LEN; i++)
@@ -101,32 +110,41 @@ void adsr_stateMachineTick(void) // freq update: 1536Hz
       case STATE_IDLE:
       {
         // idle, wait gate on, level=0
-        adsrValue[i]=0;
-        setAdsrPwmValue(i,adsrValue[i]);
         break; 
       }
       case STATE_ATTACK:
       {
         // rising at attack rate, wait level to reach max
-        adsrValue[i]+=attackRate[i];
-        if(adsrValue[i]>=ATTACK_MAX_VALUE)
+        attackRateCounter[i]--;
+        if(attackRateCounter[i]<=0)
         {
-          adsrValue[i] = ATTACK_MAX_VALUE;
-          state[i] = STATE_DECAY;
+          attackRateCounter[i]=attackRate[i];
+          adsrValue[i]+=4;
+          if(adsrValue[i]>=ATTACK_MAX_VALUE)
+          {
+            adsrValue[i] = ATTACK_MAX_VALUE;
+            decayRateCounter[i] = decayRate[i];
+            state[i] = STATE_DECAY;
+          }
+          setAdsrPwmValue(i,adsrValue[i]);
         }
-        setAdsrPwmValue(i,adsrValue[i]);
         break;
       }
       case STATE_DECAY:
       {
         // falling at decay rate, wait level to reach sustain level
-        adsrValue[i]-=decayRate[i];
-        if(adsrValue[i]<=sustainValue[i])
+        decayRateCounter[i]--;
+        if(decayRateCounter[i]<=0)
         {
-          adsrValue[i] = sustainValue[i];
-          state[i] = STATE_SUSTAIN;  
+          decayRateCounter[i] = decayRate[i];
+          adsrValue[i]-=4;
+          if(adsrValue[i]<=sustainValue[i])
+          {
+            adsrValue[i] = sustainValue[i];
+            state[i] = STATE_SUSTAIN;  
+          }
+          setAdsrPwmValue(i,adsrValue[i]);        
         }
-        setAdsrPwmValue(i,adsrValue[i]);        
         break;
       }
       case STATE_SUSTAIN:
@@ -137,12 +155,18 @@ void adsr_stateMachineTick(void) // freq update: 1536Hz
       case STATE_RELEASE:
       {
         // falling at release rate, wait level to reach zero.  
-        adsrValue[i]-=releaseRate[i];
-        if(adsrValue[i]<=0)
-        {  
-            state[i] = STATE_IDLE;    
+        releaseRateCounter[i]--;
+        if(releaseRateCounter[i]<=0)
+        {
+          releaseRateCounter[i] = releaseRate[i];
+          adsrValue[i]-=4;
+          if(adsrValue[i]<=0)
+          {  
+              adsrValue[i]=0;
+              state[i] = STATE_IDLE;    
+          }
+          setAdsrPwmValue(i,adsrValue[i]);                
         }
-        setAdsrPwmValue(i,adsrValue[i]);                
         break;
       }
     }
@@ -151,21 +175,21 @@ void adsr_stateMachineTick(void) // freq update: 1536Hz
 
 
 
-void adsr_setAnalogAttackRate(int i, int value)
+void adsr_setMidiAttackRate(int i, int value)
 {
     attackRate[i] = value;
 }
-void adsr_setAnalogDecayRate(int i, int value)
+void adsr_setMidiDecayRate(int i, int value)
 {
     decayRate[i] = value;
 }
-void adsr_setAnalogReleaseRate(int i, int value)
+void adsr_setMidiReleaseRate(int i, int value)
 {
     releaseRate[i] = value;
 }
-void adsr_setAnalogSustainValue(int i, int value)
+void adsr_setMidiSustainValue(int i, int value)
 {
-    sustainValue[i] = (value*SUSTAIN_MAX_VALUE)/AN_MAX_VALUE;
+    sustainValue[i] = (value*SUSTAIN_MAX_VALUE)/127;
 }
 
 
