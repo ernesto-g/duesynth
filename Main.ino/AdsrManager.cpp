@@ -34,6 +34,9 @@ static int volatile attackRateCounter[ADSR_LEN];
 static int volatile decayRateCounter[ADSR_LEN];
 static int volatile releaseRateCounter[ADSR_LEN];
 
+static int volatile flagEnvLowSpeed;
+static int volatile lowSpeedDivider;
+
 // Private functions
 static void setAdsrPwmValue(int i, int value);
 
@@ -59,6 +62,9 @@ void adsr_init(void)
     releaseRateCounter[i]=releaseRate[i];
     
   }
+
+  flagEnvLowSpeed=0; // leer de entrada
+  lowSpeedDivider=0;
 }
 
 
@@ -102,6 +108,17 @@ static void setAdsrPwmValue(int i, int value)
 
 void adsr_stateMachineTick(void) // freq update: 14,4Khz
 {
+  // low speed mode (89ms to 11sec) (x10)
+  if(flagEnvLowSpeed)
+  {
+    lowSpeedDivider++;
+    if(lowSpeedDivider<10)
+      return;
+  }
+  lowSpeedDivider=0;
+  //______________________________
+
+  
   int i;
   for(i=0; i<ADSR_LEN; i++)
   {
