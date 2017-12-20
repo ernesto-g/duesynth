@@ -51,6 +51,7 @@ void midircv_stateMachine(void)
     indexBufferInternal++;
     if(indexBufferInternal==3)
     {
+      //Serial.write("PACKET!");
       MidiInfo midiInfo;
       processMidiPacket(bufferMidiInternalKeyboard,indexBufferInternal,FROM_INTERNAL_KEYBOARD,&midiInfo);      
       midi_analizeMidiInfo(&midiInfo);

@@ -182,6 +182,17 @@ void dcoUpdateMono(void)
   accSquare += (PWM_MAX_VALUE / 2);
   accSub += (PWM_MAX_VALUE / 2);
 
+  // secure limits
+  if(accTri>PWM_MAX_VALUE)
+    accTri=PWM_MAX_VALUE;
+  if(accSaw>PWM_MAX_VALUE)
+    accSaw=PWM_MAX_VALUE;
+  if(accSquare>PWM_MAX_VALUE)
+    accSquare=PWM_MAX_VALUE;
+  if(accSub>PWM_MAX_VALUE)
+    accSub=PWM_MAX_VALUE;
+  //______________
+
   pwm_pin34.set_duty_fast(accSquare);
   pwm_pin36.set_duty_fast(accSaw);
   pwm_pin40.set_duty_fast(accSub);
@@ -207,31 +218,29 @@ static void dcoUpdateLFO(void)
     lfoCounter = lfoCounter - LFO_TABLE_SIZE;
   }
 
+  int val;
   switch (lfoWaveType)
   {
     case LFO_WAVE_TYPE_SINE:
-      pwm_pin6.set_duty_fast(SINETABLE[lfoCounter]);
+      val = SINETABLE[lfoCounter];
       break;
-
     case LFO_WAVE_TYPE_TRIANGLE:
-      //OCR2B = pgm_read_byte_near(TRIANGLETABLE + lfoCounter );
-      pwm_pin6.set_duty_fast(TRIANGLETABLE[lfoCounter]);
+      val = TRIANGLETABLE[lfoCounter] ;
       break;
     case LFO_WAVE_TYPE_EXP:
-      //OCR2B = pgm_read_byte_near(EXPTABLE + lfoCounter );
-      pwm_pin6.set_duty_fast(EXPTABLE[lfoCounter]);
+      val = EXPTABLE[lfoCounter] ;
       break;
     case LFO_WAVE_TYPE_SQUARE:
       if (lfoCounter < (LFO_TABLE_SIZE / 2))
-        //  OCR2B = 255;
-        pwm_pin6.set_duty_fast(572);
+        val = PWM_MAX_VALUE;
       else
-        //  OCR2B = 0;
-        pwm_pin6.set_duty_fast(0);
+        val = 0;
       break;
-
   }
 
+  if(val>PWM_MAX_VALUE)
+    val = PWM_MAX_VALUE;
+  pwm_pin6.set_duty_fast(val);
   
   
 }

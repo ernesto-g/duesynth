@@ -100,6 +100,9 @@ void adsr_triggerEvent(int vel) // vel can be used to modulate attack rate
 
 static void setAdsrPwmValue(int i, int value)
 {
+  if(value>PWM_MAX_VALUE)
+    value=PWM_MAX_VALUE;
+    
   if(i==0)
     pwm_pin7.set_duty_fast(value);
   else
