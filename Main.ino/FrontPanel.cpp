@@ -2,6 +2,7 @@
 #include "DcoManager.h"
 #include "AnalogIns.h"
 #include "WindowsManager.h"
+#include "AdsrManager.h"
 
 
 
@@ -66,6 +67,7 @@ void fp_stateMachine(void)
           uint16_t* values = ain_getValues();
           int analogValue = values[indexControl];
           assignAnalogValue(indexControl,analogValue);
+          indexControl++;
           if(indexControl>=12)
           {
               state = FP_STATE_IDLE;
@@ -78,30 +80,26 @@ void fp_stateMachine(void)
     // void dco_setSubOctave(int flag2Octv) 
 }
 
-/* USAR:
- * void adsr_setMidiAttackRate(int i, int value);
-void adsr_setMidiDecayRate(int i, int value);
-void adsr_setMidiReleaseRate(int i, int value);
-void adsr_setMidiSustainValue(int i, int value);
- */
+
 static void assignMidiValue(int indexControl,int midiValue)
 {
   switch(indexControl)
   {
-      case WIN_MAN_CONTROL_ATTACK1: break;
-      case WIN_MAN_CONTROL_DECAY1: break;
-      case WIN_MAN_CONTROL_SUSTAIN1: break;
-      case WIN_MAN_CONTROL_RELEASE1: break;
+      case WIN_MAN_CONTROL_ATTACK1: adsr_setMidiAttackRate(0,midiValue); break;
+      case WIN_MAN_CONTROL_DECAY1: adsr_setMidiDecayRate(0,midiValue);break;
+      case WIN_MAN_CONTROL_SUSTAIN1: adsr_setMidiSustainValue(0,midiValue);break;
+      case WIN_MAN_CONTROL_RELEASE1: adsr_setMidiReleaseRate(0,midiValue); break;
       
-      case WIN_MAN_CONTROL_ATTACK2: break;
-      case WIN_MAN_CONTROL_DECAY2: break;
-      case WIN_MAN_CONTROL_SUSTAIN2: break;
-      case WIN_MAN_CONTROL_RELEASE2: break;
+      case WIN_MAN_CONTROL_ATTACK2: adsr_setMidiAttackRate(1,midiValue); break;
+      case WIN_MAN_CONTROL_DECAY2: adsr_setMidiDecayRate(1,midiValue); break;
+      case WIN_MAN_CONTROL_SUSTAIN2: adsr_setMidiSustainValue(1,midiValue); break;
+      case WIN_MAN_CONTROL_RELEASE2: adsr_setMidiReleaseRate(1,midiValue);  break;
   }
 } 
 
 static void assignAnalogValue(int indexControl,int analogValue)
 {
+  /*
   switch(indexControl)
   {
     case 0: // ULtraSawAmount
@@ -123,9 +121,8 @@ static void assignAnalogValue(int indexControl,int analogValue)
       dco_setEnvAmtForTriangle(analogValue);
       break;
 
-      
-        
     case 11: break;
   }
+  */
 }
 

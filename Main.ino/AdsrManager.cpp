@@ -196,7 +196,7 @@ void adsr_stateMachineTick(void) // freq update: 14,4Khz
 
 
 void adsr_setMidiAttackRate(int i, int value)
-{
+{  
     attackRate[i] = value;
 }
 void adsr_setMidiDecayRate(int i, int value)
