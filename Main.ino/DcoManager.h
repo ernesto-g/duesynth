@@ -11,8 +11,10 @@ void dco_init(void);
 
 
 // Square settings
-void dco_setPwmForSquare(unsigned int analogValue);
-void dco_setEnvAmtForSquare(unsigned int analogValue);
+void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue);
+void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue);
+void dco_setPwmLfoAmtForSquare(int pwmMidiValue);
+void dco_updatePwmValueForSquare(void);
 //________________
 
 // Sub osc settings

@@ -39,7 +39,11 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 static volatile unsigned int squareCounters[SQUARE_COUNTERS];
 static volatile unsigned int squareFreqMultiplierHalf[SQUARE_COUNTERS];
 static volatile unsigned int squareFreqMultiplier[SQUARE_COUNTERS];
-static volatile unsigned int pwmForSquareValue;
+
+static volatile int pwmAdsr2Amt;
+static volatile int pwmLfoAmt;
+static volatile unsigned int pwmFrontPanelAmt;
+
 
 
 //static volatile unsigned int eg[EG_COUNTERS];
@@ -278,25 +282,68 @@ void dco_init(void)
   flagSubOctave=0;
 
   //debug
- // eg[0] = (PWM_MAX_VALUE / 2);
-  pwmForSquareValue = 0;
+
+  pwmAdsr2Amt = 0;
+  pwmLfoAmt = 0;
+  pwmFrontPanelAmt = 0;
+  
   ultrasawForSawValue = 0;
   dco_setMIDInote(45);
   //______
 
 }
 
-void dco_setPwmForSquare(unsigned int analogValue)
+// Square PWM management ****************************************************************************
+/*
+void dco_setPwmPercentForSquare(unsigned int pwmPercentValue)
 {
-  unsigned int pwmPercentValue = 100 - (  (((90 - 50) * analogValue) / AN_MAX_VALUE) + 50  ) ;
-  squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * pwmPercentValue) / 100;
+  if(pwmPercentValue==0xFFFFFFFF)
+    pwmPercentValue = pwmForSquareValue;
+  else
+    pwmForSquareValue = pwmPercentValue;
 
-  pwmForSquareValue = analogValue;
+  // pwm modulations
+  pwmPercentValue = (pwmPercentValue*pwmAdsr2Amt)/128;  
+  pwmPercentValue = (pwmPercentValue*pwmLfoAmt)/128;
+  //________________
+
+  // change 0 to 100 -> 50% to 90%
+  pwmPercentValue = 50 + (40*pwmPercentValue)/100;
+  //____________________________
+    
+  squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * pwmPercentValue) / 100;
 }
-void dco_setEnvAmtForSquare(unsigned int analogValue)
+*
+ */
+ void dco_updatePwmValueForSquare(void)
+ {
+    int acc = pwmFrontPanelAmt + pwmLfoAmt + pwmAdsr2Amt;
+
+    acc = 64 + (acc*51)/128; // output: 64 to 115 (50% -> 90% parts of 128)
+
+    if(acc>115) // modulation clipping
+      acc = 115; // 115 = 90%
+    if(acc<64)
+      acc = 64; // 64 = 50%
+      
+    squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * acc) / 128;
+ }
+void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue) // used by adsr2
 {
-  
+    pwmAdsr2Amt = pwmMidiValue;
 }
+void dco_setPwmLfoAmtForSquare(int pwmMidiValue) // used by lfo
+{
+    pwmLfoAmt = pwmMidiValue;
+}
+void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue) // used by front panel pot
+{
+    pwmFrontPanelAmt = pwmMidiValue;
+}
+
+//____________________________________________________________________________________________________
+
+
 
 void dco_setPhaseForUltrasaw(unsigned int analogValue) // NO VA!!!
 {
@@ -361,8 +408,7 @@ void dco_setMIDInote(int note)
     // set square
     signed int f = (signed int)TABLE_SQUARE_FREQ[note];
     squareFreqMultiplier[0] = f;
-    // check pwm for set squareFreqMultiplierHalf
-    dco_setPwmForSquare(pwmForSquareValue);
+    dco_updatePwmValueForSquare(); // update current pwm value for new freq note
     //____________
 
     // set saw

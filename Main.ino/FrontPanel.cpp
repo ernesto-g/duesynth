@@ -4,7 +4,7 @@
 #include "WindowsManager.h"
 #include "AdsrManager.h"
 
-
+#define AN_MAX_VALUE  4095
 
 #define SET_FP_ITEM_PERIOD      10
 
@@ -99,20 +99,26 @@ static void assignMidiValue(int indexControl,int midiValue)
 
 static void assignAnalogValue(int indexControl,int analogValue)
 {
-  /*
+  unsigned int uMidiValue;
+  int sMidiValue;  
   switch(indexControl)
   {
+    case 0: // PulseWidth (square)
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setPwmFrontPanelAmtForSquare(uMidiValue);
+      dco_updatePwmValueForSquare();
+      break;
+    
+    case 1: // ENV Amt (square)
+      sMidiValue =  ((128 * analogValue) / AN_MAX_VALUE) - 64 ; // analog to midi (signed)
+      adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
+      break;
+    /*  
     case 0: // ULtraSawAmount
       dco_setUltraSawAmt(analogValue);
       break;
     case 1: // ULtraSawRate
       dco_setUltraSawRate(analogValue);
-      break;
-    case 2: // PulseWidth
-      dco_setPwmForSquare(analogValue);
-      break;
-    case 3: // ENV Amt (square)
-      dco_setEnvAmtForSquare(analogValue);
       break;
     case 4: // Metalizer
       dco_setMetalizerForTriangle(analogValue);
@@ -122,7 +128,8 @@ static void assignAnalogValue(int indexControl,int analogValue)
       break;
 
     case 11: break;
+    */
   }
-  */
+  
 }
 

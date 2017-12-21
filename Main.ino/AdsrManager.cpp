@@ -1,5 +1,6 @@
 #include <chip.h>
 #include "pwm_lib.h"
+#include "DcoManager.h"
 
 using namespace arduino_due::pwm_lib;
 
@@ -36,6 +37,8 @@ static int volatile releaseRateCounter[ADSR_LEN];
 
 static int volatile flagEnvLowSpeed;
 static int volatile lowSpeedDivider;
+
+static volatile int pwmEnvAmtFromFrontPanel;
 
 // Private functions
 static void setAdsrPwmValue(int i, int value);
@@ -103,10 +106,23 @@ static void setAdsrPwmValue(int i, int value)
   if(value>PWM_MAX_VALUE)
     value=PWM_MAX_VALUE;
     
-  if(i==0)
+  if(i==0){
     pwm_pin7.set_duty_fast(value);
-  else
+  }
+  else {
     pwm_pin8.set_duty_fast(value);
+    // update pwm env amt
+    int midiVal = (value*128) / PWM_MAX_VALUE;
+    if(pwmEnvAmtFromFrontPanel>=0)
+    {
+      dco_setPwmAdsr2AmtForSquare(  (midiVal*pwmEnvAmtFromFrontPanel)/64  ); // adsr signal positive (0 to 128)
+    }
+    else
+    {
+      dco_setPwmAdsr2AmtForSquare(  (midiVal*pwmEnvAmtFromFrontPanel)/64 + 128 ); // adsr inverted signal (128 to 0)
+    }
+    dco_updatePwmValueForSquare(); // update current pwm value for new freq note
+  }
 }
 
 void adsr_stateMachineTick(void) // freq update: 14,4Khz
@@ -212,4 +228,8 @@ void adsr_setMidiSustainValue(int i, int value)
     sustainValue[i] = (value*SUSTAIN_MAX_VALUE)/127;
 }
 
+void adsr_setMidiPwmEnvAmtForSquare(int midiVal)
+{
+  pwmEnvAmtFromFrontPanel = midiVal;
+}
 

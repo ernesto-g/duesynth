@@ -13,3 +13,5 @@ void adsr_setMidiDecayRate(int i, int value);
 void adsr_setMidiReleaseRate(int i, int value);
 void adsr_setMidiSustainValue(int i, int value);
 
+void adsr_setMidiPwmEnvAmtForSquare(int midiVal);
+
