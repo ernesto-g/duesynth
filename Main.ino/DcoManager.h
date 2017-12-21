@@ -15,6 +15,7 @@ void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue);
 void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue);
 void dco_setPwmLfoAmtForSquare(int pwmMidiValue);
 void dco_updatePwmValueForSquare(void);
+void dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(int midiValue);
 //________________
 
 // Sub osc settings

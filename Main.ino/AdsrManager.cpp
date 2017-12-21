@@ -122,6 +122,7 @@ static void setAdsrPwmValue(int i, int value)
       dco_setPwmAdsr2AmtForSquare(  ((midiVal*pwmEnvAmtFromFrontPanel)/64) + 128 ); // adsr inverted signal (128 to 0)
     }
     dco_updatePwmValueForSquare(); // update current pwm value for new freq note
+    //____________________
   }
 }
 

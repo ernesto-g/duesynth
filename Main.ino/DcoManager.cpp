@@ -43,6 +43,8 @@ static volatile unsigned int squareFreqMultiplier[SQUARE_COUNTERS];
 static volatile int pwmAdsr2Amt;
 static volatile int pwmLfoAmt;
 static volatile unsigned int pwmFrontPanelAmt;
+static volatile int pwmAndMetFrontPanelAmt;
+static volatile int metLfoAmt;
 
 
 
@@ -246,7 +248,20 @@ static void dcoUpdateLFO(void)
     val = PWM_MAX_VALUE;
   pwm_pin6.set_duty_fast(val);
   
-  
+
+  // update pwm lfo amt
+  int midiVal = (val*128) / PWM_MAX_VALUE;
+  if(pwmAndMetFrontPanelAmt>=0)
+  {
+    dco_setPwmLfoAmtForSquare(  (midiVal*pwmAndMetFrontPanelAmt)/64  ); // adsr signal positive (0 to 128)
+  }
+  else
+  {
+    dco_setPwmLfoAmtForSquare(  ((midiVal*pwmAndMetFrontPanelAmt)/64) + 128 ); // adsr inverted signal (128 to 0)
+  }
+  dco_updatePwmValueForSquare(); // update current pwm value for new freq note
+  //_____________________
+    
 }
 
 void dco_init(void)
@@ -272,7 +287,7 @@ void dco_init(void)
 
   lfoWaveType = LFO_WAVE_TYPE_SINE;
   lfoCounter = 0;
-  lfoFreqMultiplier = 30; // from 1 to 60 for 0.5Hz to 30Hz
+  lfoFreqMultiplier = 10; // from 1 to 60 for 0.5Hz to 30Hz
 
 
   Timer3.attachInterrupt(dcoUpdateMono).setFrequency(72000).start(); // freq update: 72Khz
@@ -294,29 +309,8 @@ void dco_init(void)
 }
 
 // Square PWM management ****************************************************************************
-/*
-void dco_setPwmPercentForSquare(unsigned int pwmPercentValue)
+void dco_updatePwmValueForSquare(void)
 {
-  if(pwmPercentValue==0xFFFFFFFF)
-    pwmPercentValue = pwmForSquareValue;
-  else
-    pwmForSquareValue = pwmPercentValue;
-
-  // pwm modulations
-  pwmPercentValue = (pwmPercentValue*pwmAdsr2Amt)/128;  
-  pwmPercentValue = (pwmPercentValue*pwmLfoAmt)/128;
-  //________________
-
-  // change 0 to 100 -> 50% to 90%
-  pwmPercentValue = 50 + (40*pwmPercentValue)/100;
-  //____________________________
-    
-  squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * pwmPercentValue) / 100;
-}
-*
- */
- void dco_updatePwmValueForSquare(void)
- {
     int acc = pwmFrontPanelAmt + pwmLfoAmt + pwmAdsr2Amt;
 
     acc = 64 + (acc*51)/128; // output: 64 to 115 (50% -> 90% parts of 128)
@@ -327,7 +321,7 @@ void dco_setPwmPercentForSquare(unsigned int pwmPercentValue)
       acc = 64; // 64 = 50%
       
     squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * acc) / 128;
- }
+}
 void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue) // used by adsr2
 {
     pwmAdsr2Amt = pwmMidiValue;
@@ -455,18 +449,22 @@ void dco_setTrigger(unsigned char velocity)// 0...127
     //...
 }
 
+// LFO management **********************************************************************************
 void dco_lfoReset(void)
 {
   lfoCounter = 0;
 }
-
 void dco_lfoFreq(unsigned char value) // 1 to 60 (0.5hz to 30hz)
 {
   lfoFreqMultiplier = value;
 }
-
 void dco_lfoSetWaveType(unsigned char type)
 {
     lfoWaveType=type;
 }
+void dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(int midiValue)
+{
+    pwmAndMetFrontPanelAmt = midiValue;
+}
+//____________________________________________________________________________________________________
 

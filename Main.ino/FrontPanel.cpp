@@ -112,11 +112,14 @@ static void assignAnalogValue(int indexControl,int analogValue)
     
     case 1: // ENV Amt (square)
       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
-      //Serial.write("env amt:");
-      //Serial.print(sMidiValue,DEC);
-      //Serial.write("\n");
       adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
       break;
+
+    case 9: // PWM and Metalizer LFO
+       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
+      break;
+
     /*  
     case 0: // ULtraSawAmount
       dco_setUltraSawAmt(analogValue);
