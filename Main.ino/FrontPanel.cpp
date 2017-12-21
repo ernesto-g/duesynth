@@ -3,6 +3,7 @@
 #include "AnalogIns.h"
 #include "WindowsManager.h"
 #include "AdsrManager.h"
+//#include "Arduino.h"
 
 #define AN_MAX_VALUE  4095
 
@@ -110,7 +111,10 @@ static void assignAnalogValue(int indexControl,int analogValue)
       break;
     
     case 1: // ENV Amt (square)
-      sMidiValue =  ((128 * analogValue) / AN_MAX_VALUE) - 64 ; // analog to midi (signed)
+      sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+      //Serial.write("env amt:");
+      //Serial.print(sMidiValue,DEC);
+      //Serial.write("\n");
       adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
       break;
     /*  
