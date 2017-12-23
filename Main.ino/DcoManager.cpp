@@ -55,6 +55,11 @@ static volatile int flagSawPhaseChanged;
 static volatile unsigned int ultrasawForSawValue;
 static volatile int phase1Value;
 static volatile int phase2Value;
+
+static volatile int ultraSawAmt;
+static volatile int ultraSawPhase0InPwmScale;
+static volatile int ultraSawPhase1InPwmScale;
+
 static volatile int flagSubOctave;
 
 static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
@@ -64,6 +69,11 @@ static volatile signed int metalizerLevel[METALIZER_STAGES];
 static volatile int lfoCounter;
 static volatile int lfoWaveType;
 static volatile int lfoFreqMultiplier;
+static volatile int lfoSecondaryDivider;
+static volatile int lfoUltraSaw0Counter;
+static volatile int lfoUltraSaw1Counter;
+static volatile int lfoUltraSaw1Multiplier;
+
 
 static volatile int adsrDivider=0;
 
@@ -261,6 +271,31 @@ static void dcoUpdateLFO(void)
   }
   dco_updatePwmValueForSquare(); // update current pwm value for new freq note
   //_____________________
+
+  // Secondary LFOs ****************************
+  lfoSecondaryDivider++;
+  if(lfoSecondaryDivider>=3) // 0.16 to 10Hz
+  {
+    lfoSecondaryDivider=0;
+    
+    // ultrasaw LFO
+    lfoUltraSaw0Counter += 6; // for 1Hz
+    if (lfoUltraSaw0Counter >= LFO_TABLE_SIZE) {
+      lfoUltraSaw0Counter = lfoUltraSaw0Counter - LFO_TABLE_SIZE;
+    }
+    lfoUltraSaw1Counter += lfoUltraSaw1Multiplier;
+    if (lfoUltraSaw1Counter >= LFO_TABLE_SIZE) {
+      lfoUltraSaw1Counter = lfoUltraSaw1Counter - LFO_TABLE_SIZE;
+    }
+    ultraSawPhase0InPwmScale = SINETABLE[lfoUltraSaw0Counter];
+    ultraSawPhase1InPwmScale = SINETABLE[lfoUltraSaw1Counter];  
+    dco_updatePhaseForUltrasaw();
+    //_____________
+  
+    // Vibrato LFO
+    //______________
+  }
+  //____________________________________________
     
 }
 
@@ -288,6 +323,13 @@ void dco_init(void)
   lfoWaveType = LFO_WAVE_TYPE_SINE;
   lfoCounter = 0;
   lfoFreqMultiplier = 10; // from 1 to 60 for 0.5Hz to 30Hz
+  lfoSecondaryDivider = 0;
+
+  lfoUltraSaw0Counter=0;
+  lfoUltraSaw1Counter=0;
+  lfoUltraSaw1Multiplier=10;
+  ultraSawPhase0InPwmScale=0;
+  ultraSawPhase1InPwmScale=0;
 
 
   Timer3.attachInterrupt(dcoUpdateMono).setFrequency(72000).start(); // freq update: 72Khz
@@ -338,17 +380,29 @@ void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue) // used by fron
 //____________________________________________________________________________________________________
 
 
-
-void dco_setPhaseForUltrasaw(unsigned int analogValue) // NO VA!!!
+// SAW management ************************************************************************************
+void dco_updatePhaseForUltrasaw(void)
 {
-  unsigned int percentValue =    (90 * analogValue) / AN_MAX_VALUE   ;
+  int phase0;
+  int phase1;
 
-  phase2Value = -1 * ((squareFreqMultiplier[0] * percentValue) / 100);
-  phase1Value = -1 * ((squareFreqMultiplier[0] * (percentValue >> 1)) / 100);
-
-  ultrasawForSawValue = analogValue;
+  phase0 = (ultraSawPhase0InPwmScale * ultraSawAmt) / 128;
+  phase1 = (ultraSawPhase1InPwmScale * ultraSawAmt) / 128;
+  
+  phase2Value = -1 * ((squareFreqMultiplier[0] * phase1) / PWM_MAX_VALUE);
+  phase1Value = -1 * ((squareFreqMultiplier[0] * phase0) / PWM_MAX_VALUE);
   flagSawPhaseChanged = 1;
 }
+void dco_setUltraSawAmt(unsigned int midiValue)
+{
+    ultraSawAmt = (signed)midiValue;
+}
+void dco_setUltraSawRate(unsigned int midiValue)
+{
+    lfoUltraSaw1Multiplier = ((midiValue * 60) / 128 ) + 1 ; // from 1 to 60; //  0.16Hz to 10Hz
+}
+//____________________________________________________________________________________________________
+
 
 void dco_setMetalizerForTriangle(unsigned int analogValue)
 {
@@ -383,15 +437,7 @@ void dco_setSubOctave(int flag2Octv)
   flagSubOctave = flag2Octv;
 }
 
-void dco_setUltraSawAmt(unsigned int analogValue)
-{
-  
-}
 
-void dco_setUltraSawRate(unsigned int analogValue)
-{
-  
-}
 
 
 void dco_setMIDInote(int note)
@@ -406,8 +452,8 @@ void dco_setMIDInote(int note)
     //____________
 
     // set saw
-    dco_setPhaseForUltrasaw(ultrasawForSawValue);
-
+    //dco_setPhaseForUltrasaw(ultrasawForSawValue);
+    dco_updatePhaseForUltrasaw();
 
     // set sub
     signed int noteSub = note - 12;

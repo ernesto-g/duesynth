@@ -23,9 +23,9 @@ void dco_setSubOctave(int flag2Octv);
 //_____________
 
 // Ultra saw settings
-void dco_setPhaseForUltrasaw(unsigned int analogValue);
-void dco_setUltraSawAmt(unsigned int analogValue);
-void dco_setUltraSawRate(unsigned int analogValue);
+void dco_updatePhaseForUltrasaw(void);
+void dco_setUltraSawAmt(unsigned int midiValue);
+void dco_setUltraSawRate(unsigned int midiValue);
 //___________________
 
 // Triangle settings

@@ -70,10 +70,11 @@ AN7: LFO PITCH MOD
 AN8: LFO WAvE FORM
 AN9: LFO PWM&MET
 AN10: PITCH WHEEL
-AN11: VIBRATO RATE - MOD WHEEL
+AN11: MOD WHEEL
 
-AN12 (missing pin): 
-AN13 (missing pin): GLADE
+AN12 (missing pin): GLADE
+AN13 (missing pin): Bend range
+AN14 (missing pin): VIBRATO RATE 
  
 
 LCD controls (on screen):
