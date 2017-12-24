@@ -78,7 +78,17 @@ namespace arduino_due
 
        void set_duty_fast(uint32_t duty)
        {
-          PWMC_SetDutyCycle(PWM_INTERFACE,pin_info::channel,duty);
+          //PWMC_SetDutyCycle(PWM_INTERFACE,pin_info::channel,duty);
+                /* If ul_channel is disabled, write to CDTY */
+                if ((PWM_INTERFACE->PWM_SR & (1 << pin_info::channel)) == 0) {
+            
+                    PWM_INTERFACE->PWM_CH_NUM[pin_info::channel].PWM_CDTY = duty;
+                }
+                /* Otherwise use update register */
+                else {
+            
+                    PWM_INTERFACE->PWM_CH_NUM[pin_info::channel].PWM_CDTYUPD = duty;
+                }
        }
        
        bool set_duty(uint32_t duty /* 1e-8 secs. */)

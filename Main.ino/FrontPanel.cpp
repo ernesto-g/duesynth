@@ -115,31 +115,28 @@ static void assignAnalogValue(int indexControl,int analogValue)
       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
       adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
       break;
+    case 2: // ULtraSawAmount
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setUltraSawAmt(uMidiValue);
+      break;
+    case 3: // ULtraSawRate
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setUltraSawRate(uMidiValue);
+      break;
     case 9: // PWM and Metalizer LFO
        sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
        dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
       break;
     */
     
-    case 0: // ULtraSawAmount
-      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
-      dco_setUltraSawAmt(uMidiValue);
-      break;
-    case 1: // ULtraSawRate
-      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
-      dco_setUltraSawRate(uMidiValue);
-      break;
-      
-      /*
-    case 4: // Metalizer
+           
+    case 0: // Metalizer
       dco_setMetalizerForTriangle(analogValue);
       break;
-    case 5: // ENV Amt (triangle)
+    case 1: // ENV Amt (triangle)
       dco_setEnvAmtForTriangle(analogValue);
       break;
 
-    case 11: break;
-    */
   }
   
 }

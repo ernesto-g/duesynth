@@ -31,7 +31,9 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 
 #define AN_MAX_VALUE  4095
 
-
+#define MET_0_MAX 150
+#define MET_1_MAX 180
+#define MET_2_MAX 120
 
 
 
@@ -83,6 +85,8 @@ static unsigned int TABLE_SQUARE_FREQ[] = {2618, 2471, 2333, 2202, 2078, 1961, 1
 
 #include "WaveTables.cpp"
 
+static volatile int counterMet=0;
+static volatile int metValueToSub=0;
 
 void dcoUpdateMono(void)
 {
@@ -153,6 +157,7 @@ void dcoUpdateMono(void)
   }
 
   // triangle
+  /*
   triangleCounters[0]++;
   if (triangleDelta[0] == 1)
   {
@@ -179,21 +184,112 @@ void dcoUpdateMono(void)
       triangleCounters[0] = 0;
     }
   }
+  */
   //__________
 
-
-
+  /*
+  int limit; 
   for (i = 0; i < METALIZER_STAGES ; i++)
   {
-    if (accTri > (PWM_MAX_VALUE - metalizerLevel[i]) )
+    limit = (PWM_MAX_VALUE - metalizerLevel[i]);
+      
+    if (accTri > limit )
     {
-      accTri = (2 * (PWM_MAX_VALUE - metalizerLevel[i])) - accTri;
+      accTri = (2 * (limit)) - accTri;
     }
     else if (accTri < metalizerLevel[i] )
     {
       accTri = (2 * metalizerLevel[i]) - accTri;
     }
+  }*/
+  
+
+  triangleCounters[0]++;
+  if (triangleDelta[0] == 1)
+  {
+    // positive
+    accTri = ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
+    if (triangleCounters[0] < (squareFreqMultiplier[0] >> 1))
+    {
+    }
+    else
+    {
+      triangleDelta[0] = 0;
+    }
   }
+  else
+  {
+    // negative
+    accTri = (2 * PWM_MAX_VALUE) - ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
+    if (triangleCounters[0] < squareFreqMultiplier[0]) // paso la mitad
+    {
+    }
+    else
+    {
+      triangleDelta[0] = 1;
+      triangleCounters[0] = 0;
+    }
+  }
+  
+  
+  if (triangleCounters[0] == (squareFreqMultiplier[0] >> 4) ) // 1/16
+  {
+      counterMet=10;
+      metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
+  }
+  if (triangleCounters[0] == (squareFreqMultiplier[0] >> 3) ) // 1/8
+  {
+      counterMet=10;
+      metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
+  }
+  
+  if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 4) + (squareFreqMultiplier[0] >> 2) ) ) // 1/16 + 1/4
+  {
+      counterMet=10;
+      metValueToSub = accTri - (PWM_MAX_VALUE/2);
+  }
+  if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 3) + (squareFreqMultiplier[0] >> 2) ) ) // 1/8 + 1/4
+  {
+      counterMet=10;
+      metValueToSub = accTri - (PWM_MAX_VALUE/2);
+  }
+
+  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) - (squareFreqMultiplier[0] >> 4) ) // 1/2 - 1/16
+  {
+      counterMet=10;
+      metValueToSub = accTri - (PWM_MAX_VALUE/2);
+  }  
+  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/16
+  {
+      counterMet=10;
+      metValueToSub = accTri - (PWM_MAX_VALUE/2);
+  }   
+
+  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/4 + 1/16 
+  {
+      counterMet=10;
+      metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
+  } 
+  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 3) ) // 1/2 + 1/4 + 1/8 
+  {
+      counterMet=10;
+      metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
+  }    
+
+  if(counterMet>0)
+  {
+      counterMet--;
+      accTri = accTri - metValueToSub;    
+      if(accTri<0)
+        accTri=0;
+  }
+  
+  
+
+
+
+
+
 
   accSquare += (PWM_MAX_VALUE / 2);
   accSub += (PWM_MAX_VALUE / 2);
@@ -298,6 +394,9 @@ static void dcoUpdateLFO(void)
   //____________________________________________
     
 }
+
+
+
 
 void dco_init(void)
 {
@@ -406,7 +505,7 @@ void dco_setUltraSawRate(unsigned int midiValue)
 
 void dco_setMetalizerForTriangle(unsigned int analogValue)
 {
-  /*
+
     if(analogValue<(AN_MAX_VALUE/3))
     {
       metalizerLevel[0] = (MET_0_MAX*analogValue)/(AN_MAX_VALUE/3);
@@ -416,16 +515,22 @@ void dco_setMetalizerForTriangle(unsigned int analogValue)
     else if(analogValue<(AN_MAX_VALUE*2/3))
     {
       metalizerLevel[0] = MET_0_MAX;
-      metalizerLevel[1] = hacer cuenta;
+      metalizerLevel[1] = 0 ; //metalizerLevel[1] = hacer cuenta;
       metalizerLevel[2] = 0;      
     }
     else
     {
       metalizerLevel[0] = MET_0_MAX;
       metalizerLevel[1] = MET_1_MAX;
-      metalizerLevel[2] = hacer cuenta;            
+      //metalizerLevel[2] = hacer cuenta;
+      metalizerLevel[2] = 0;             
     }
-    */
+
+    Serial.write("MET level 0:");
+    Serial.print(metalizerLevel[0],DEC);
+    Serial.write("\n");
+    
+    
 }
 void dco_setEnvAmtForTriangle(unsigned int analogValue)
 {
