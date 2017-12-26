@@ -24,7 +24,7 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 #define EG_COUNTERS     2 // adsr 1 and adsr 2
 #define SAW_COUNTERS    3 // for ultrasaw
 #define TRIANGLE_COUNTERS 1
-#define METALIZER_STAGES  3
+//#define METALIZER_STAGES  3
 
 #define ADSR1     0
 #define ADSR2     1
@@ -46,27 +46,30 @@ static volatile int pwmAdsr2Amt;
 static volatile int pwmLfoAmt;
 static volatile unsigned int pwmFrontPanelAmt;
 static volatile int pwmAndMetFrontPanelAmt;
-static volatile int metLfoAmt;
 
 
+static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
+static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
+static volatile int metAdsr2Amt;
+static volatile unsigned int metFrontPanelAmt;
+static volatile int metalizerMaxAmplitudeMidi;
+static volatile int counterMet=0;
+static volatile int metValueToSub=0;
+static volatile int metalizerMaxTimeGap;
 
-//static volatile unsigned int eg[EG_COUNTERS];
 
 static volatile signed int sawCounters[SAW_COUNTERS];
 static volatile int flagSawPhaseChanged;
 static volatile unsigned int ultrasawForSawValue;
 static volatile int phase1Value;
 static volatile int phase2Value;
-
 static volatile int ultraSawAmt;
 static volatile int ultraSawPhase0InPwmScale;
 static volatile int ultraSawPhase1InPwmScale;
 
+
 static volatile int flagSubOctave;
 
-static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
-static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
-static volatile signed int metalizerLevel[METALIZER_STAGES];
 
 static volatile int lfoCounter;
 static volatile int lfoWaveType;
@@ -85,8 +88,6 @@ static unsigned int TABLE_SQUARE_FREQ[] = {2618, 2471, 2333, 2202, 2078, 1961, 1
 
 #include "WaveTables.cpp"
 
-static volatile int counterMet=0;
-static volatile int metValueToSub=0;
 
 void dcoUpdateMono(void)
 {
@@ -234,52 +235,52 @@ void dcoUpdateMono(void)
   
   if (triangleCounters[0] == (squareFreqMultiplier[0] >> 4) ) // 1/16
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }
   if (triangleCounters[0] == (squareFreqMultiplier[0] >> 3) ) // 1/8
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }
   
   if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 4) + (squareFreqMultiplier[0] >> 2) ) ) // 1/16 + 1/4
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }
   if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 3) + (squareFreqMultiplier[0] >> 2) ) ) // 1/8 + 1/4
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }
 
   if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) - (squareFreqMultiplier[0] >> 4) ) // 1/2 - 1/16
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }  
   if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/16
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }   
 
   if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/4 + 1/16 
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   } 
   if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 3) ) // 1/2 + 1/4 + 1/8 
   {
-      counterMet=10;
+      counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }    
 
   if(counterMet>0)
   {
       counterMet--;
-      accTri = accTri - metValueToSub;    
+      accTri = accTri - ((metValueToSub*metalizerMaxAmplitudeMidi)/128);    
       if(accTri<0)
         accTri=0;
   }
@@ -365,7 +366,8 @@ static void dcoUpdateLFO(void)
   {
     dco_setPwmLfoAmtForSquare(  ((midiVal*pwmAndMetFrontPanelAmt)/64) + 128 ); // adsr inverted signal (128 to 0)
   }
-  dco_updatePwmValueForSquare(); // update current pwm value for new freq note
+  dco_updatePwmValueForSquare(); // update current pwm value
+  dco_updateMetValueForTriangle(); // update current metalizer value 
   //_____________________
 
   // Secondary LFOs ****************************
@@ -415,9 +417,6 @@ void dco_init(void)
   triangleDelta[0] = 1;
   triangleCounters[0] = 0;
 
-  metalizerLevel[0] = 250;
-  metalizerLevel[1] = 180;
-  metalizerLevel[2] = 120;
 
   lfoWaveType = LFO_WAVE_TYPE_SINE;
   lfoCounter = 0;
@@ -442,7 +441,10 @@ void dco_init(void)
   pwmAdsr2Amt = 0;
   pwmLfoAmt = 0;
   pwmFrontPanelAmt = 0;
-  
+
+  metAdsr2Amt = 0;
+  metFrontPanelAmt = 0;
+    
   ultrasawForSawValue = 0;
   dco_setMIDInote(45);
   //______
@@ -469,7 +471,7 @@ void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue) // used by adsr2
 }
 void dco_setPwmLfoAmtForSquare(int pwmMidiValue) // used by lfo
 {
-    pwmLfoAmt = pwmMidiValue;
+    pwmLfoAmt = pwmMidiValue; // esta tmb se usa para el metalizer!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue) // used by front panel pot
 {
@@ -477,6 +479,35 @@ void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue) // used by fron
 }
 
 //____________________________________________________________________________________________________
+
+// TRIANGLE management ************************************************************************************
+void dco_updateMetValueForTriangle(void)
+{
+    int acc = metFrontPanelAmt + pwmLfoAmt + metAdsr2Amt; // LFO amt its the same for PWM and METALIZER
+
+    if(acc>128) // modulation clipping
+      acc = 128; // 100%
+    if(acc<0)
+      acc = 0;  // 0%
+
+    metalizerMaxAmplitudeMidi = acc;  
+    metalizerMaxTimeGap = ( (squareFreqMultiplier[0] * acc) / 128) / 16 ;  
+}
+
+void dco_setMetAdsr2AmtForTriangle(int metMidiValue) // used by adsr2
+{
+    metAdsr2Amt = metMidiValue;
+}
+void dco_setMetFrontPanelAmtForTriangle(unsigned int metMidiValue) // used by front panel pot
+{
+   metFrontPanelAmt = metMidiValue;
+}
+//____________________________________________________________________________________________________
+
+
+
+
+
 
 
 // SAW management ************************************************************************************
@@ -503,39 +534,6 @@ void dco_setUltraSawRate(unsigned int midiValue)
 //____________________________________________________________________________________________________
 
 
-void dco_setMetalizerForTriangle(unsigned int analogValue)
-{
-
-    if(analogValue<(AN_MAX_VALUE/3))
-    {
-      metalizerLevel[0] = (MET_0_MAX*analogValue)/(AN_MAX_VALUE/3);
-      metalizerLevel[1] = 0;
-      metalizerLevel[2] = 0;
-    }
-    else if(analogValue<(AN_MAX_VALUE*2/3))
-    {
-      metalizerLevel[0] = MET_0_MAX;
-      metalizerLevel[1] = 0 ; //metalizerLevel[1] = hacer cuenta;
-      metalizerLevel[2] = 0;      
-    }
-    else
-    {
-      metalizerLevel[0] = MET_0_MAX;
-      metalizerLevel[1] = MET_1_MAX;
-      //metalizerLevel[2] = hacer cuenta;
-      metalizerLevel[2] = 0;             
-    }
-
-    Serial.write("MET level 0:");
-    Serial.print(metalizerLevel[0],DEC);
-    Serial.write("\n");
-    
-    
-}
-void dco_setEnvAmtForTriangle(unsigned int analogValue)
-{
-  
-}
 
 void dco_setSubOctave(int flag2Octv)
 {
@@ -557,9 +555,12 @@ void dco_setMIDInote(int note)
     //____________
 
     // set saw
-    //dco_setPhaseForUltrasaw(ultrasawForSawValue);
-    dco_updatePhaseForUltrasaw();
+    dco_updatePhaseForUltrasaw(); // update current pwm value
 
+    // set triangle
+    dco_updateMetValueForTriangle(); // update current metalizer value 
+
+    
     // set sub
     signed int noteSub = note - 12;
     if(flagSubOctave)

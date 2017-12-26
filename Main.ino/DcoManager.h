@@ -29,9 +29,9 @@ void dco_setUltraSawRate(unsigned int midiValue);
 //___________________
 
 // Triangle settings
-void dco_setMetalizerForTriangle(unsigned int analogValue);
-void dco_setEnvAmtForTriangle(unsigned int analogValue);
-
+void dco_setMetAdsr2AmtForTriangle(int metMidiValue);
+void dco_updateMetValueForTriangle(void);
+void dco_setMetFrontPanelAmtForTriangle(unsigned int metMidiValue);
 //___________________
 
 

@@ -131,10 +131,13 @@ static void assignAnalogValue(int indexControl,int analogValue)
     
            
     case 0: // Metalizer
-      dco_setMetalizerForTriangle(analogValue);
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setMetFrontPanelAmtForTriangle(uMidiValue);
+      dco_updateMetValueForTriangle(); // update current metalizer value
       break;
     case 1: // ENV Amt (triangle)
-      dco_setEnvAmtForTriangle(analogValue);
+      sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+      adsr_setMidiMetEnvAmtForTriangle(sMidiValue);
       break;
 
   }

@@ -39,6 +39,7 @@ static int volatile flagEnvLowSpeed;
 static int volatile lowSpeedDivider;
 
 static volatile int pwmEnvAmtFromFrontPanel;
+static volatile int metEnvAmtFromFrontPanel;
 
 // Private functions
 static void setAdsrPwmValue(int i, int value);
@@ -121,8 +122,20 @@ static void setAdsrPwmValue(int i, int value)
     {
       dco_setPwmAdsr2AmtForSquare(  ((midiVal*pwmEnvAmtFromFrontPanel)/64) + 128 ); // adsr inverted signal (128 to 0)
     }
-    dco_updatePwmValueForSquare(); // update current pwm value for new freq note
+    dco_updatePwmValueForSquare(); // update current pwm value
     //____________________
+
+    //update metalizer env amt
+    if(metEnvAmtFromFrontPanel>=0)
+    {
+        dco_setMetAdsr2AmtForTriangle(  (midiVal*metEnvAmtFromFrontPanel)/64  ); // adsr signal positive (0 to 128)
+    }
+    else
+    {
+        dco_setMetAdsr2AmtForTriangle(  (midiVal*metEnvAmtFromFrontPanel)/64 + 128 ); // adsr inverted signal (128 to 0)
+    }
+    dco_updateMetValueForTriangle(); // update current metalizer value
+    //__________________
   }
 }
 
@@ -232,5 +245,10 @@ void adsr_setMidiSustainValue(int i, int value)
 void adsr_setMidiPwmEnvAmtForSquare(int midiVal)
 {
   pwmEnvAmtFromFrontPanel = midiVal;
+}
+
+void adsr_setMidiMetEnvAmtForTriangle(int midiVal)
+{
+  metEnvAmtFromFrontPanel = midiVal;
 }
 
