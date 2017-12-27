@@ -5,6 +5,7 @@
 #define LFO_WAVE_TYPE_TRIANGLE    1
 #define LFO_WAVE_TYPE_EXP         2
 #define LFO_WAVE_TYPE_SQUARE      3
+#define LFO_WAVE_TYPE_RANDOM      4
 
 void dco_init(void);
 
@@ -44,7 +45,7 @@ void dco_setTrigger(unsigned char velocity);
 
 // LFO settings
 void dco_lfoReset(void);
-void dco_lfoFreq(unsigned char value);
+void dco_lfoFreq(unsigned int analogValue);
 void dco_lfoSetWaveType(unsigned char type);
 //______________
 

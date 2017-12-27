@@ -78,7 +78,11 @@ static volatile int lfoSecondaryDivider;
 static volatile int lfoUltraSaw0Counter;
 static volatile int lfoUltraSaw1Counter;
 static volatile int lfoUltraSaw1Multiplier;
+static volatile unsigned short randomCounter=0;
+static volatile int lfoSampleAndHoldNewSampleFlag=0;
+static volatile int lfoSampleAndHoldValue=0;
 
+#define INC_RANDOM_COUNTER()  {randomCounter++; if(randomCounter>=(RANDOM_TABLE_SIZE-1)) randomCounter=0;}
 
 static volatile int adsrDivider=0;
 
@@ -320,15 +324,20 @@ void dcoUpdateMono(void)
     adsr_stateMachineTick(); //14,4Khz
   }
 
+  INC_RANDOM_COUNTER();
+
 }
+
 
 
 
 static void dcoUpdateLFO(void)
 {
+  
   lfoCounter += lfoFreqMultiplier;
   if (lfoCounter >= LFO_TABLE_SIZE) {
     lfoCounter = lfoCounter - LFO_TABLE_SIZE;
+    lfoSampleAndHoldNewSampleFlag = 1;
   }
 
   int val;
@@ -349,6 +358,15 @@ static void dcoUpdateLFO(void)
       else
         val = 0;
       break;
+    case LFO_WAVE_TYPE_RANDOM:
+      if(lfoSampleAndHoldNewSampleFlag==1) // sample new value
+      {
+        lfoSampleAndHoldValue = RANDOMTABLE[randomCounter]; // hold value
+        lfoSampleAndHoldNewSampleFlag = 0;
+      } 
+      val = lfoSampleAndHoldValue ; 
+      break;
+      
   }
 
   if(val>PWM_MAX_VALUE)
@@ -418,9 +436,9 @@ void dco_init(void)
   triangleCounters[0] = 0;
 
 
-  lfoWaveType = LFO_WAVE_TYPE_SINE;
+  lfoWaveType = LFO_WAVE_TYPE_RANDOM;
   lfoCounter = 0;
-  lfoFreqMultiplier = 10; // from 1 to 60 for 0.5Hz to 30Hz
+  lfoFreqMultiplier = 10; // from 1 to 180 for 0.5Hz to 90Hz
   lfoSecondaryDivider = 0;
 
   lfoUltraSaw0Counter=0;
@@ -471,7 +489,7 @@ void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue) // used by adsr2
 }
 void dco_setPwmLfoAmtForSquare(int pwmMidiValue) // used by lfo
 {
-    pwmLfoAmt = pwmMidiValue; // esta tmb se usa para el metalizer!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    pwmLfoAmt = pwmMidiValue; // it is used for metalizer too
 }
 void dco_setPwmFrontPanelAmtForSquare(unsigned int pwmMidiValue) // used by front panel pot
 {
@@ -577,6 +595,8 @@ void dco_setMIDInote(int note)
 
   }
 
+  INC_RANDOM_COUNTER();
+
 }
 
 void dco_setGate(byte val)
@@ -606,9 +626,9 @@ void dco_lfoReset(void)
 {
   lfoCounter = 0;
 }
-void dco_lfoFreq(unsigned char value) // 1 to 60 (0.5hz to 30hz)
+void dco_lfoFreq(unsigned int analogValue) // 1 to 180 (0.5hz to 90hz)
 {
-  lfoFreqMultiplier = value;
+  lfoFreqMultiplier = (analogValue*179 / AN_MAX_VALUE) + 1 ;
 }
 void dco_lfoSetWaveType(unsigned char type)
 {

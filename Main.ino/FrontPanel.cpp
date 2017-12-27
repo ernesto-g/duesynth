@@ -123,22 +123,27 @@ static void assignAnalogValue(int indexControl,int analogValue)
       uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
       dco_setUltraSawRate(uMidiValue);
       break;
-    case 9: // PWM and Metalizer LFO
-       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
-       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
-      break;
-    */
-    
-           
-    case 0: // Metalizer
+    case 4: // Metalizer
       uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
       dco_setMetFrontPanelAmtForTriangle(uMidiValue);
       dco_updateMetValueForTriangle(); // update current metalizer value
       break;
-    case 1: // ENV Amt (triangle)
+    case 5: // ENV Amt (triangle)
       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
       adsr_setMidiMetEnvAmtForTriangle(sMidiValue);
       break;
+
+
+    */
+    
+    case 0: // LFO Rate
+      dco_lfoFreq(analogValue);
+      break;
+    case 1: // PWM and Metalizer LFO
+       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
+      break;
+    
 
   }
   
