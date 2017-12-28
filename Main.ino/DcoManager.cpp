@@ -31,6 +31,7 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 // private variables
 static volatile unsigned int currentNoteCounterValue;
 static volatile unsigned int currentNoteCounterValueHalf;
+static volatile unsigned int currentNoteCounterValueOriginal;
 
 static volatile unsigned int squareCounter;
 static volatile int pwmAdsr2Amt;
@@ -73,6 +74,7 @@ static volatile int lfoUltraSaw1Multiplier;
 static volatile unsigned short randomCounter=0;
 static volatile int lfoSampleAndHoldNewSampleFlag=0;
 static volatile int lfoSampleAndHoldValue=0;
+static volatile int pitchLfoFrontPanelAmt=0;
 
 #define INC_RANDOM_COUNTER()  {randomCounter++; if(randomCounter>=(RANDOM_TABLE_SIZE-1)) randomCounter=0;}
 
@@ -327,11 +329,26 @@ static void dcoUpdateLFO(void)
   if(val>PWM_MAX_VALUE)
     val = PWM_MAX_VALUE;
   pwm_pin6.set_duty_fast(val);
-  
+
+  int midiVal = (val*128) / PWM_MAX_VALUE;
+  val = val - (PWM_MAX_VALUE/2); // convert to signed value
+
+  // pitch modulation
+  int modVal;
+  if(pitchLfoFrontPanelAmt>=0)
+  {
+      modVal = (val*pitchLfoFrontPanelAmt)/64; // pitch signal positive (-(PWM_MAX_VALUE/2) to +(PWM_MAX_VALUE/2))
+  }
+  else
+  {
+      modVal = (( (0)-val)*pitchLfoFrontPanelAmt)/64; // pitch inverted signal (-(PWM_MAX_VALUE/2) to +(PWM_MAX_VALUE/2))   
+  }
+  int delta = ((currentNoteCounterValueOriginal*2)-currentNoteCounterValueOriginal);
+  currentNoteCounterValue = currentNoteCounterValueOriginal +  ( (delta * modVal)/PWM_MAX_VALUE );
+  //___________________
 
   // update pwm lfo amt
-  int midiVal = (val*128) / PWM_MAX_VALUE;
-  if(pwmAndMetFrontPanelAmt>=0)
+  if(pwmAndMetFrontPanelAmt>=0) // ESTA MAL, HACER SIGNAL INVERTIDA COMO EN EL PITCH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
   {
     dco_setPwmLfoAmtForSquare(  (midiVal*pwmAndMetFrontPanelAmt)/64  ); // adsr signal positive (0 to 128)
   }
@@ -339,8 +356,10 @@ static void dcoUpdateLFO(void)
   {
     dco_setPwmLfoAmtForSquare(  ((midiVal*pwmAndMetFrontPanelAmt)/64) + 128 ); // adsr inverted signal (128 to 0)
   }
+  
   dco_updatePwmValueForSquare(); // update current pwm value
   dco_updateMetValueForTriangle(); // update current metalizer value 
+  dco_updatePhaseForUltrasaw(); // update current phases value
   //_____________________
 
   // Secondary LFOs ****************************
@@ -386,7 +405,7 @@ void dco_init(void)
   triangleDelta = 1;
   triangleCounter = 0;
 
-  lfoWaveType = LFO_WAVE_TYPE_RANDOM;
+  lfoWaveType = LFO_WAVE_TYPE_SINE;
   lfoCounter = 0;
   lfoFreqMultiplier = 10; // from 1 to 180 for 0.5Hz to 90Hz
   lfoSecondaryDivider = 0;
@@ -519,11 +538,12 @@ void dco_setMIDInote(int note)
   if (note >= 21 && note <= 96)
   {
     note = note - 21;
-    // set square
     signed int f = (signed int)TABLE_SQUARE_FREQ[note];
-    currentNoteCounterValue = f;
+    currentNoteCounterValueOriginal = f;
+    currentNoteCounterValue = currentNoteCounterValueOriginal;
+
+    // set square
     dco_updatePwmValueForSquare(); // update current pwm value for new freq note
-    //____________
 
     // set saw
     dco_updatePhaseForUltrasaw(); // update current pwm value
@@ -577,6 +597,10 @@ void dco_lfoSetWaveType(unsigned char type)
 void dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(int midiValue)
 {
     pwmAndMetFrontPanelAmt = midiValue;
+}
+void dco_lfoSetPitch(int midiValue)
+{
+  pitchLfoFrontPanelAmt = midiValue;
 }
 //____________________________________________________________________________________________________
 

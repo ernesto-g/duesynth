@@ -3,7 +3,7 @@
 #include "AnalogIns.h"
 #include "WindowsManager.h"
 #include "AdsrManager.h"
-//#include "Arduino.h"
+#include "Arduino.h"
 
 #define AN_MAX_VALUE  4095
 
@@ -133,15 +133,23 @@ static void assignAnalogValue(int indexControl,int analogValue)
       adsr_setMidiMetEnvAmtForTriangle(sMidiValue);
       break;
 
+    case 9: // PWM and Metalizer LFO
+       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
+      break;
 
     */
     
     case 0: // LFO Rate
       dco_lfoFreq(analogValue);
       break;
-    case 1: // PWM and Metalizer LFO
-       sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
-       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
+    case 1: // LFO  Pitch
+      sMidiValue =  ((signed)((128 * analogValue) / AN_MAX_VALUE)) - 64 ; // analog to midi (signed)
+      Serial.write("PITCH:");
+      Serial.print(sMidiValue,DEC);
+      Serial.write("\n");
+            
+      dco_lfoSetPitch(sMidiValue);
       break;
     
 

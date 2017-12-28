@@ -47,6 +47,7 @@ void dco_setTrigger(unsigned char velocity);
 void dco_lfoReset(void);
 void dco_lfoFreq(unsigned int analogValue);
 void dco_lfoSetWaveType(unsigned char type);
+void dco_lfoSetPitch(int midiValue);
 //______________
 
 
