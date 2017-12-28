@@ -21,19 +21,9 @@ URTouch  myTouch( 10, 5, 4, 3, 2);
 #include "WindowsManager.h"
 #include "FrontPanel.h"
 
-using namespace arduino_due::pwm_lib;
 
-volatile boolean l=0;
-volatile int count=1000;
 void sysTick()
 {
-  count--;
-  if(count<-0)
-  {
-    l = 1;
-    count=1000;
-  }
-
   midircv_sysTick();
   win_sysTick();
   fp_sysTick();
@@ -61,7 +51,7 @@ void setup() {
   
   //************** LCD and TOUCH *****************
   pinMode(53, OUTPUT);
-  digitalWrite(53, HIGH); // RD en 1
+  digitalWrite(53, HIGH); // RD = 1
   pinMode(44, OUTPUT);
   pinMode(45, OUTPUT);
   pinMode(46, OUTPUT);
@@ -79,14 +69,15 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
   win_init();
 
-  pinMode(41, OUTPUT); //debug
-  digitalWrite(41, LOW);  
+  //************** DEBUG *****************
+  pinMode(21, OUTPUT); //debug
+  digitalWrite(21, LOW);  
 
-  // init screen
-  wm_showBoot();  
-  
+
+
+  //************** Screen Init *****************
+  wm_showBoot();    
   fp_init();
-  
 }
 
 void loop() {
@@ -97,47 +88,5 @@ void loop() {
   ain_state_machine();
   midircv_stateMachine();
   fp_stateMachine();
-  
-  if(l)
-  {
-    l=0;
-    uint16_t* values = ain_getValues();
-    /*
-    Serial.write("ANALOG 0:");
-    Serial.print(values[0],DEC);
-    Serial.write("\n");
-
-    Serial.write("ANALOG 1:");
-    Serial.print(values[1],DEC);
-    Serial.write("\n");
-
-    Serial.write("ANALOG 11:");
-    Serial.print(values[11],DEC);
-    Serial.write("\n");
-    */
-
-    /*
-    int potVal = widvc_getMidiValue(&controlAttack);
-    Serial.write("ATTACK:");
-    Serial.print(potVal,DEC);
-    Serial.write("\n");
-     */
     
-  }
-  else
-  {
-    /*
-    pwm_pin34.set_duty_fast(255);
-    pwm_pin7.set_duty_fast(255);
-    pwm_pin6.set_duty_fast(255);
-    pwm_pin8.set_duty_fast(255);
-    pwm_pin9.set_duty_fast(255);
-    pwm_pin36.set_duty_fast(536);
-    pwm_pin38.set_duty_fast(536);
-    pwm_pin40.set_duty_fast(536);
-    */
-  }
-  
-  
-  //delay(1000);
 }

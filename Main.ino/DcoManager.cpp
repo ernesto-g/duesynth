@@ -20,36 +20,27 @@ pwm<pwm_pin::PWML7_PC24> pwm_pin6;
 #define SAW_MAX_AMPLITUDE (PWM_MAX_VALUE)
 #define EG_MAX_AMPLITUDE  (PWM_MAX_VALUE)
 
-#define SQUARE_COUNTERS 2 // square and sub
-#define EG_COUNTERS     2 // adsr 1 and adsr 2
 #define SAW_COUNTERS    3 // for ultrasaw
-#define TRIANGLE_COUNTERS 1
-//#define METALIZER_STAGES  3
 
 #define ADSR1     0
 #define ADSR2     1
 
 #define AN_MAX_VALUE  4095
 
-#define MET_0_MAX 150
-#define MET_1_MAX 180
-#define MET_2_MAX 120
-
-
 
 // private variables
-static volatile unsigned int squareCounters[SQUARE_COUNTERS];
-static volatile unsigned int squareFreqMultiplierHalf[SQUARE_COUNTERS];
-static volatile unsigned int squareFreqMultiplier[SQUARE_COUNTERS];
+static volatile unsigned int currentNoteCounterValue;
+static volatile unsigned int currentNoteCounterValueHalf;
 
+static volatile unsigned int squareCounter;
 static volatile int pwmAdsr2Amt;
 static volatile int pwmLfoAmt;
 static volatile unsigned int pwmFrontPanelAmt;
 static volatile int pwmAndMetFrontPanelAmt;
 
 
-static volatile signed int triangleCounters[TRIANGLE_COUNTERS];
-static volatile signed int triangleDelta[TRIANGLE_COUNTERS];
+static volatile signed int triangleCounter;
+static volatile signed int triangleDelta;
 static volatile int metAdsr2Amt;
 static volatile unsigned int metFrontPanelAmt;
 static volatile int metalizerMaxAmplitudeMidi;
@@ -68,6 +59,7 @@ static volatile int ultraSawPhase0InPwmScale;
 static volatile int ultraSawPhase1InPwmScale;
 
 
+static volatile unsigned int squareCounterSub;
 static volatile int flagSubOctave;
 
 
@@ -89,13 +81,12 @@ static volatile int adsrDivider=0;
 
 // freq tables
 static unsigned int TABLE_SQUARE_FREQ[] = {2618, 2471, 2333, 2202, 2078, 1961, 1851, 1747, 1649, 1557, 1469, 1387, 1309, 1236, 1166, 1101, 1039, 981, 926, 874, 825, 778, 735, 693, 655, 618, 583, 550, 520, 490, 463, 437, 412, 389, 367, 347, 327, 309, 292, 275, 260, 245, 231, 218, 206, 195, 184, 173, 164, 154, 146, 138, 130, 123, 116, 109, 103, 97, 92, 87, 82, 77, 73, 69, 65, 61, 58, 55, 52, 49, 46, 43, 41, 39, 36, 34};
-
 #include "WaveTables.cpp"
 
 
 void dcoUpdateMono(void)
 {
-  //digitalWrite(2, HIGH);
+  digitalWrite(21, HIGH);
 
   unsigned char i;
   signed int accSquare = 0;
@@ -104,33 +95,40 @@ void dcoUpdateMono(void)
   signed int accSub = 0;
 
   // square
-  squareCounters[0]++;
-  if (squareCounters[0] < squareFreqMultiplierHalf[0])
+  squareCounter++;
+  if (squareCounter < currentNoteCounterValueHalf)
   {
     accSquare -= (PWM_MAX_VALUE / 2) ;
   }
-  else if (squareCounters[0] < squareFreqMultiplier[0])
+  else if (squareCounter < currentNoteCounterValue)
   {
     accSquare += (PWM_MAX_VALUE / 2) ;
   }
   else
   {
-    squareCounters[0] = 0;
+    squareCounter = 0;
   }
 
   // sub (square)
-  squareCounters[1]++;
-  if (squareCounters[1] < squareFreqMultiplierHalf[1])
+  unsigned int currentNoteCounterValueHalfSub = currentNoteCounterValueHalf>>1;
+  unsigned int currentNoteCounterValueSub = currentNoteCounterValue>>1;
+  if(flagSubOctave)
+  {
+    currentNoteCounterValueHalfSub = currentNoteCounterValueHalfSub>>1;
+    currentNoteCounterValueSub = currentNoteCounterValueSub>>1;
+  }
+  squareCounterSub++;
+  if (squareCounterSub < currentNoteCounterValueHalfSub)
   {
     accSub -= (PWM_MAX_VALUE / 2) ;
   }
-  else if (squareCounters[1] < squareFreqMultiplier[1])
+  else if (squareCounterSub < currentNoteCounterValueSub)
   {
     accSub += (PWM_MAX_VALUE / 2) ;
   }
   else
   {
-    squareCounters[1] = 0;
+    squareCounterSub = 0;
   }
 
   // saw
@@ -139,9 +137,9 @@ void dcoUpdateMono(void)
     sawCounters[i]++;
     if (sawCounters[i] >= 0)
     {
-      if (sawCounters[i] < squareFreqMultiplier[0])
+      if (sawCounters[i] < currentNoteCounterValue)
       {
-        accSaw += ((PWM_MAX_VALUE / 3) * sawCounters[i]) / squareFreqMultiplier[0];
+        accSaw += ((PWM_MAX_VALUE / 3) * sawCounters[i]) / currentNoteCounterValue;
       }
       else
       {
@@ -150,8 +148,8 @@ void dcoUpdateMono(void)
           flagSawPhaseChanged = 0;
           // reoad counters with new phase values
           sawCounters[0] = 0;
-          sawCounters[1] = phase1Value; // -1*(squareFreqMultiplier[0]/4);
-          sawCounters[2] = phase2Value; //-1*(squareFreqMultiplier[0]/2);
+          sawCounters[1] = phase1Value; 
+          sawCounters[2] = phase2Value; 
         }
         else
           sawCounters[i] = 0;
@@ -162,120 +160,75 @@ void dcoUpdateMono(void)
   }
 
   // triangle
-  /*
-  triangleCounters[0]++;
-  if (triangleDelta[0] == 1)
+  triangleCounter++;
+  if (triangleDelta == 1)
   {
     // positive
-    accTri = ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
-    if (triangleCounters[0] < (squareFreqMultiplier[0] >> 1))
+    accTri = ((2 * PWM_MAX_VALUE) * triangleCounter) / (currentNoteCounterValue);
+    if (triangleCounter < (currentNoteCounterValue >> 1))
     {
     }
     else
     {
-      triangleDelta[0] = 0;
+      triangleDelta = 0;
     }
   }
   else
   {
     // negative
-    accTri = (2 * PWM_MAX_VALUE) - ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
-    if (triangleCounters[0] < squareFreqMultiplier[0]) // paso la mitad
+    accTri = (2 * PWM_MAX_VALUE) - ((2 * PWM_MAX_VALUE) * triangleCounter) / (currentNoteCounterValue);
+    if (triangleCounter < currentNoteCounterValue) // paso la mitad
     {
     }
     else
     {
-      triangleDelta[0] = 1;
-      triangleCounters[0] = 0;
+      triangleDelta = 1;
+      triangleCounter = 0;
     }
   }
-  */
-  //__________
-
-  /*
-  int limit; 
-  for (i = 0; i < METALIZER_STAGES ; i++)
-  {
-    limit = (PWM_MAX_VALUE - metalizerLevel[i]);
-      
-    if (accTri > limit )
-    {
-      accTri = (2 * (limit)) - accTri;
-    }
-    else if (accTri < metalizerLevel[i] )
-    {
-      accTri = (2 * metalizerLevel[i]) - accTri;
-    }
-  }*/
   
 
-  triangleCounters[0]++;
-  if (triangleDelta[0] == 1)
-  {
-    // positive
-    accTri = ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
-    if (triangleCounters[0] < (squareFreqMultiplier[0] >> 1))
-    {
-    }
-    else
-    {
-      triangleDelta[0] = 0;
-    }
-  }
-  else
-  {
-    // negative
-    accTri = (2 * PWM_MAX_VALUE) - ((2 * PWM_MAX_VALUE) * triangleCounters[0]) / (squareFreqMultiplier[0]);
-    if (triangleCounters[0] < squareFreqMultiplier[0]) // paso la mitad
-    {
-    }
-    else
-    {
-      triangleDelta[0] = 1;
-      triangleCounters[0] = 0;
-    }
-  }
+  unsigned int currentNoteCounterValue_1_16 = (currentNoteCounterValue >> 4);
+  unsigned int currentNoteCounterValue_1_8 = (currentNoteCounterValue >> 3);
+  unsigned int currentNoteCounterValue_1_4 = (currentNoteCounterValue >> 2);
+  unsigned int currentNoteCounterValue_1_2 = (currentNoteCounterValue >> 1);
   
-  
-  if (triangleCounters[0] == (squareFreqMultiplier[0] >> 4) ) // 1/16
+  if (triangleCounter == currentNoteCounterValue_1_16 ) // 1/16
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }
-  if (triangleCounters[0] == (squareFreqMultiplier[0] >> 3) ) // 1/8
+  else if (triangleCounter == currentNoteCounterValue_1_8 ) // 1/8
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }
-  
-  if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 4) + (squareFreqMultiplier[0] >> 2) ) ) // 1/16 + 1/4
+  else if (triangleCounter == (currentNoteCounterValue_1_16 + currentNoteCounterValue_1_4 ) ) // 1/16 + 1/4
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }
-  if (triangleCounters[0] == ((squareFreqMultiplier[0] >> 3) + (squareFreqMultiplier[0] >> 2) ) ) // 1/8 + 1/4
+  else if (triangleCounter == (currentNoteCounterValue_1_8 + currentNoteCounterValue_1_4 ) ) // 1/8 + 1/4
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }
-
-  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) - (squareFreqMultiplier[0] >> 4) ) // 1/2 - 1/16
+  else if (triangleCounter == ( currentNoteCounterValue_1_2 ) - currentNoteCounterValue_1_16 ) // 1/2 - 1/16
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }  
-  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/16
+  else if (triangleCounter == ( currentNoteCounterValue_1_2 ) + currentNoteCounterValue_1_16 ) // 1/2 + 1/16
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }   
-
-  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 4) ) // 1/2 + 1/4 + 1/16 
+  else if (triangleCounter == ( currentNoteCounterValue_1_2 ) + currentNoteCounterValue_1_4 + currentNoteCounterValue_1_16 ) // 1/2 + 1/4 + 1/16 
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   } 
-  if (triangleCounters[0] == ( (squareFreqMultiplier[0] >> 1) ) + (squareFreqMultiplier[0] >> 2) + (squareFreqMultiplier[0] >> 3) ) // 1/2 + 1/4 + 1/8 
+  else if (triangleCounter == ( currentNoteCounterValue_1_2 ) + currentNoteCounterValue_1_4 + currentNoteCounterValue_1_8 ) // 1/2 + 1/4 + 1/8 
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
@@ -289,6 +242,7 @@ void dcoUpdateMono(void)
         accTri=0;
   }
   
+  //_________________________________________________________________________________________________________________  
   
 
 
@@ -315,7 +269,6 @@ void dcoUpdateMono(void)
   pwm_pin40.set_duty_fast(accSub);
   pwm_pin38.set_duty_fast(accTri);
 
-  //digitalWrite(2, LOW);
 
   adsrDivider++;
   if(adsrDivider>=5)
@@ -325,6 +278,8 @@ void dcoUpdateMono(void)
   }
 
   INC_RANDOM_COUNTER();
+
+  digitalWrite(21, LOW);
 
 }
 
@@ -425,16 +380,11 @@ void dco_init(void)
   pwm_pin36.start(681, 340);
   pwm_pin38.start(681, 340);
   pwm_pin40.start(681, 340);
-
-
   pwm_pin6.start(681, 340);
-
   pwm_pin9.start(681, 340);
 
-  //pwm_pin34.set_duty_fast(143); // tarda 0.7uS  572 ok
-  triangleDelta[0] = 1;
-  triangleCounters[0] = 0;
-
+  triangleDelta = 1;
+  triangleCounter = 0;
 
   lfoWaveType = LFO_WAVE_TYPE_RANDOM;
   lfoCounter = 0;
@@ -481,7 +431,7 @@ void dco_updatePwmValueForSquare(void)
     if(acc<64)
       acc = 64; // 64 = 50%
       
-    squareFreqMultiplierHalf[0] = (squareFreqMultiplier[0] * acc) / 128;
+    currentNoteCounterValueHalf = (currentNoteCounterValue * acc) / 128;
 }
 void dco_setPwmAdsr2AmtForSquare(int pwmMidiValue) // used by adsr2
 {
@@ -509,7 +459,7 @@ void dco_updateMetValueForTriangle(void)
       acc = 0;  // 0%
 
     metalizerMaxAmplitudeMidi = acc;  
-    metalizerMaxTimeGap = ( (squareFreqMultiplier[0] * acc) / 128) / 16 ;  
+    metalizerMaxTimeGap = ( (currentNoteCounterValue * acc) / 128) / 16 ;  
 }
 
 void dco_setMetAdsr2AmtForTriangle(int metMidiValue) // used by adsr2
@@ -537,8 +487,8 @@ void dco_updatePhaseForUltrasaw(void)
   phase0 = (ultraSawPhase0InPwmScale * ultraSawAmt) / 128;
   phase1 = (ultraSawPhase1InPwmScale * ultraSawAmt) / 128;
   
-  phase2Value = -1 * ((squareFreqMultiplier[0] * phase1) / PWM_MAX_VALUE);
-  phase1Value = -1 * ((squareFreqMultiplier[0] * phase0) / PWM_MAX_VALUE);
+  phase2Value = -1 * ((currentNoteCounterValue * phase1) / PWM_MAX_VALUE);
+  phase1Value = -1 * ((currentNoteCounterValue * phase0) / PWM_MAX_VALUE);
   flagSawPhaseChanged = 1;
 }
 void dco_setUltraSawAmt(unsigned int midiValue)
@@ -552,13 +502,16 @@ void dco_setUltraSawRate(unsigned int midiValue)
 //____________________________________________________________________________________________________
 
 
-
+// SUB management ************************************************************************************
 void dco_setSubOctave(int flag2Octv)
 {
   flagSubOctave = flag2Octv;
 }
-
-
+void dco_updateNoteForSubOsc(void)
+{
+  // sub osc note is calculated in timer interrupt
+}
+//____________________________________________________________________________________________________
 
 
 void dco_setMIDInote(int note)
@@ -568,7 +521,7 @@ void dco_setMIDInote(int note)
     note = note - 21;
     // set square
     signed int f = (signed int)TABLE_SQUARE_FREQ[note];
-    squareFreqMultiplier[0] = f;
+    currentNoteCounterValue = f;
     dco_updatePwmValueForSquare(); // update current pwm value for new freq note
     //____________
 
@@ -577,22 +530,9 @@ void dco_setMIDInote(int note)
 
     // set triangle
     dco_updateMetValueForTriangle(); // update current metalizer value 
-
     
     // set sub
-    signed int noteSub = note - 12;
-    if(flagSubOctave)
-      noteSub = noteSub - 12; // octave:-2
-      
-    if (noteSub >= 0)
-    {
-      f = TABLE_SQUARE_FREQ[noteSub];
-      squareFreqMultiplier[1] = f;
-      squareFreqMultiplierHalf[1] = f >> 1;
-    }
-    //_________
-
-
+    dco_updateNoteForSubOsc(); // update current note for sub oscillator
   }
 
   INC_RANDOM_COUNTER();
