@@ -31,6 +31,8 @@ void sysTick()
 
 void setup() {
 
+  delay(3000);
+
   //************* DCOs ***************************
   dco_init();
   

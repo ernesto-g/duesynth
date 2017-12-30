@@ -56,6 +56,7 @@ void midi_analizeMidiInfo(MidiInfo * pMidiInfo)
     {
         if(pMidiInfo->cmd==MIDI_CMD_NOTE_ON)
         {
+            /*
             Serial.write("llego comando:");
             Serial.print(pMidiInfo->cmd,DEC);
             Serial.write("llego NOTA:");
@@ -63,7 +64,7 @@ void midi_analizeMidiInfo(MidiInfo * pMidiInfo)
             Serial.write("llego vel:");
             Serial.print(pMidiInfo->vel,DEC);
             Serial.write("\n");
-            
+            */
             // NOTE ON 
             if(pMidiInfo->note>=21 && pMidiInfo->note<=96)
             { 

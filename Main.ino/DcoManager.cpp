@@ -112,12 +112,17 @@ void dcoUpdateMono(void)
   }
 
   // sub (square)
-  unsigned int currentNoteCounterValueHalfSub = currentNoteCounterValueHalf>>1;
-  unsigned int currentNoteCounterValueSub = currentNoteCounterValue>>1;
+  unsigned int currentNoteCounterValueHalfSub;
+  unsigned int currentNoteCounterValueSub;
   if(flagSubOctave)
   {
-    currentNoteCounterValueHalfSub = currentNoteCounterValueHalfSub>>1;
-    currentNoteCounterValueSub = currentNoteCounterValueSub>>1;
+    currentNoteCounterValueHalfSub = currentNoteCounterValueHalf*4;
+    currentNoteCounterValueSub = currentNoteCounterValue*4;
+  }
+  else
+  {
+    currentNoteCounterValueHalfSub = currentNoteCounterValueHalf*2;
+    currentNoteCounterValueSub = currentNoteCounterValue*2;    
   }
   squareCounterSub++;
   if (squareCounterSub < currentNoteCounterValueHalfSub)
@@ -189,12 +194,12 @@ void dcoUpdateMono(void)
     }
   }
   
-
+  // More if cases are commented due performance
   unsigned int currentNoteCounterValue_1_16 = (currentNoteCounterValue >> 4);
-  unsigned int currentNoteCounterValue_1_8 = (currentNoteCounterValue >> 3);
-  unsigned int currentNoteCounterValue_1_4 = (currentNoteCounterValue >> 2);
+  //unsigned int currentNoteCounterValue_1_8 = (currentNoteCounterValue >> 3);
+  //unsigned int currentNoteCounterValue_1_4 = (currentNoteCounterValue >> 2);
   unsigned int currentNoteCounterValue_1_2 = (currentNoteCounterValue >> 1);
-  
+  /*
   if (triangleCounter == currentNoteCounterValue_1_16 ) // 1/16
   {
       counterMet=metalizerMaxTimeGap;
@@ -205,7 +210,8 @@ void dcoUpdateMono(void)
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }
-  else if (triangleCounter == (currentNoteCounterValue_1_16 + currentNoteCounterValue_1_4 ) ) // 1/16 + 1/4
+  
+  if (triangleCounter == (currentNoteCounterValue_1_16 + currentNoteCounterValue_1_4 ) ) // 1/16 + 1/4
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
@@ -215,7 +221,8 @@ void dcoUpdateMono(void)
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }
-  else if (triangleCounter == ( currentNoteCounterValue_1_2 ) - currentNoteCounterValue_1_16 ) // 1/2 - 1/16
+  */
+  if (triangleCounter == ( currentNoteCounterValue_1_2 ) - currentNoteCounterValue_1_16 ) // 1/2 - 1/16
   {
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
@@ -225,6 +232,7 @@ void dcoUpdateMono(void)
       counterMet=metalizerMaxTimeGap;
       metValueToSub = accTri - (PWM_MAX_VALUE/2);
   }   
+  /*
   else if (triangleCounter == ( currentNoteCounterValue_1_2 ) + currentNoteCounterValue_1_4 + currentNoteCounterValue_1_16 ) // 1/2 + 1/4 + 1/16 
   {
       counterMet=metalizerMaxTimeGap;
@@ -235,7 +243,7 @@ void dcoUpdateMono(void)
       counterMet=metalizerMaxTimeGap;
       metValueToSub = -((PWM_MAX_VALUE/2) - accTri);
   }    
-
+  */
   if(counterMet>0)
   {
       counterMet--;
@@ -348,7 +356,7 @@ static void dcoUpdateLFO(void)
   //___________________
 
   // update pwm lfo amt
-  if(pwmAndMetFrontPanelAmt>=0) // ESTA MAL, HACER SIGNAL INVERTIDA COMO EN EL PITCH!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+  if(pwmAndMetFrontPanelAmt>=0)
   {
     dco_setPwmLfoAmtForSquare(  (midiVal*pwmAndMetFrontPanelAmt)/64  ); // adsr signal positive (0 to 128)
   }
@@ -421,7 +429,7 @@ void dco_init(void)
   Timer4.attachInterrupt(dcoUpdateLFO).setFrequency(1536).start(); // freq update: 1536Hz
 
   flagSawPhaseChanged = 0;
-  flagSubOctave=0;
+  flagSubOctave=1;
 
   //debug
 
