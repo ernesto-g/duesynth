@@ -72,7 +72,7 @@ void fp_stateMachine(void)
           int analogValue = values[indexControl];
           assignAnalogValue(indexControl,analogValue);
           indexControl++;
-          if(indexControl>=12)
+          if(indexControl>=16)
           {
               state = FP_STATE_IDLE;
           }
@@ -107,51 +107,65 @@ static void assignAnalogValue(int indexControl,int analogValue)
   int sMidiValue;  
   switch(indexControl)
   {
-    /*
-    // OK
-    case 0: // PulseWidth (square)
-      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
-      dco_setPwmFrontPanelAmtForSquare(uMidiValue);
-      dco_updatePwmValueForSquare();
-      break
-    case 1: // ENV Amt (square)
-      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
-      adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
-      break;
-    case 2: // ULtraSawAmount
-      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
-      dco_setUltraSawAmt(uMidiValue);
-      break;
-    case 3: // ULtraSawRate
-      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
-      dco_setUltraSawRate(uMidiValue);
-      break;
-
-    case 5: // ENV Amt (triangle)
-      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
-      adsr_setMidiMetEnvAmtForTriangle(sMidiValue);
-      break;
-    case 6: // LFO Rate
-      dco_lfoFreq(analogValue);
-      break;
-    case 7: // LFO  Pitch
-      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
-      dco_lfoSetPitch(sMidiValue);
-      break;
-    case 8: // LFO  WaveForm
-      dco_lfoSetWaveType(getDiscrete5ValuesFromSwitchSelector(analogValue>>2));
-      break;
-    case 9: // PWM and Metalizer LFO
-       sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
-       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
-      break;
-
-    */
     case 0: // Metalizer
       uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
       dco_setMetFrontPanelAmtForTriangle(uMidiValue);
       dco_updateMetValueForTriangle(); // update current metalizer value
+      break;    
+    case 1: // PulseWidth (square)
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setPwmFrontPanelAmtForSquare(uMidiValue);
+      dco_updatePwmValueForSquare();
+      break;  
+    case 2: // ULtraSawAmount
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setUltraSawAmt(uMidiValue);
+      break;  
+    case 3: // ENV Amt (triangle)
+      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
+      adsr_setMidiMetEnvAmtForTriangle(sMidiValue);
+      break;          
+    case 4: // ENV Amt (square)
+      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
+      adsr_setMidiPwmEnvAmtForSquare(sMidiValue);
+      break;          
+    case 5: // ULtraSawRate
+      uMidiValue = (128 * analogValue) / AN_MAX_VALUE ; // analog to midi (unsigned)
+      dco_setUltraSawRate(uMidiValue);
+      break;     
+    case 6: // LFO  Pitch
+      sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
+      dco_lfoSetPitch(sMidiValue);
       break;
+    case 7: // PWM and Metalizer LFO
+       sMidiValue =  ANALOG512_TO_SIGNED_MIDI_TABLE[analogValue>>3];  // analog to midi (signed)
+       dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(sMidiValue);
+      break; 
+    case 8: // LFO Rate
+      dco_lfoFreq(analogValue);
+      break;   
+    case 9: // Vibrato MOD WHEEL
+      break;
+    case 10: // PITCH WHEEL
+      break;
+    case 11: // LFO  WaveForm
+      dco_lfoSetWaveType(getDiscrete5ValuesFromSwitchSelector(analogValue>>2));
+      break;                 
+    case 12: // Vibrato Waveform
+      // 0 : rising   
+      // 2020 : sine
+      // 4070 : falling
+      break; 
+    case 13: // VIBRATO RATE 
+      break; 
+    case 14: // Sequencer play/stop/record
+      // 0 : play
+      // 2020: off
+      // 4070: record
+      break; 
+    case 15: // Sequencer rate
+      break; 
+
 
   }
   
