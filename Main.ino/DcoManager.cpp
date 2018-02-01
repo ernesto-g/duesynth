@@ -608,6 +608,11 @@ void dco_lfoFreq(unsigned int analogValue) // 1 to 180 (0.5hz to 90hz)
 void dco_lfoSetWaveType(unsigned char type)
 {
     lfoWaveType=type;
+
+    Serial.write("LFO WAVE:");
+    Serial.print(type,DEC);
+    Serial.write("\n");
+
 }
 void dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(int midiValue)
 {
