@@ -16,4 +16,8 @@ void midircv_init(void);
 void midircv_stateMachine(void);
 void midircv_sysTick(void);
 
+void midircv_resetOctaveOffset(void);
+void midircv_addOctaveOffset(void);
+void midircv_subOctaveOffset(void);
+
 

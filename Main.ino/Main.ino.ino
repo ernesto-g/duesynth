@@ -21,7 +21,6 @@ URTouch  myTouch( 10, 5, 4, 3, 2);
 #include "WindowsManager.h"
 #include "FrontPanel.h"
 
-
 void sysTick()
 {
   midircv_sysTick();
@@ -71,14 +70,9 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
   win_init();
 
-  //************** DEBUG *****************
-  pinMode(21, OUTPUT); //debug
-  digitalWrite(21, LOW);  
-
-
-
   //************** Screen Init *****************
-  wm_showBoot();    
+  wm_showBoot();
+     
   fp_init();
 }
 
@@ -90,5 +84,7 @@ void loop() {
   ain_state_machine();
   midircv_stateMachine();
   fp_stateMachine();
+
+  
     
 }

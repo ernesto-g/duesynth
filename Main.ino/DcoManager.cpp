@@ -4,6 +4,7 @@
 #include "DcoManager.h"
 #include "WaveTables.h"
 #include "AdsrManager.h"
+#include "Outs.h"
 using namespace arduino_due::pwm_lib;
 
 // PWM pins
@@ -88,7 +89,7 @@ static unsigned int TABLE_SQUARE_FREQ[] = {2618, 2471, 2333, 2202, 2078, 1961, 1
 
 void dcoUpdateMono(void)
 {
-  digitalWrite(21, HIGH);
+  //digitalWrite(21, HIGH);
 
   unsigned char i;
   signed int accSquare = 0;
@@ -289,12 +290,12 @@ void dcoUpdateMono(void)
 
   INC_RANDOM_COUNTER();
 
-  digitalWrite(21, LOW);
+  //digitalWrite(21, LOW);
 
 }
 
 
-
+static volatile byte lfoRateLed=0;
 
 static void dcoUpdateLFO(void)
 {
@@ -303,6 +304,12 @@ static void dcoUpdateLFO(void)
   if (lfoCounter >= LFO_TABLE_SIZE) {
     lfoCounter = lfoCounter - LFO_TABLE_SIZE;
     lfoSampleAndHoldNewSampleFlag = 1;
+
+    lfoRateLed = (~lfoRateLed);
+    if(lfoRateLed)
+      outs_set(OUT_LED_LFO_RATE,1);
+    else
+      outs_set(OUT_LED_LFO_RATE,0);        
   }
 
   int val;

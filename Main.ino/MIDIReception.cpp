@@ -2,6 +2,7 @@
 #include <HardwareSerial.h>
 #include "MIDIReception.h"
 #include "MIDIManager.h"
+#include "Outs.h"
 
 #define MIDI_BUFFER_LEN   32
 #define FROM_INTERNAL_KEYBOARD  0
@@ -9,12 +10,14 @@
 
 // Private functions
 static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,MidiInfo* pMidiInfo);
+static void updateOctaveLeds(void);
 
 // Private variables
 static unsigned char bufferMidiInternalKeyboard[MIDI_BUFFER_LEN];
 static unsigned char bufferMidiExternalKeyboard[MIDI_BUFFER_LEN];
 static unsigned int indexBufferInternal;
 static unsigned int indexBufferExternal;
+static int octaveOffsetLocalKeyboard;
 
 
 void midircv_sysTick(void)
@@ -33,7 +36,9 @@ void midircv_init(void)
   Serial2.begin(31250);
   Serial2.setTimeout(0);
   indexBufferExternal=0;
-  
+
+  octaveOffsetLocalKeyboard=0;
+  updateOctaveLeds();
 }
 
 void midircv_stateMachine(void)
@@ -74,6 +79,25 @@ void midircv_stateMachine(void)
   }
 }
 
+void midircv_resetOctaveOffset(void)
+{
+  octaveOffsetLocalKeyboard=0;
+  updateOctaveLeds();  
+}
+void midircv_addOctaveOffset(void)
+{
+  if(octaveOffsetLocalKeyboard<2)
+    octaveOffsetLocalKeyboard++;
+
+  updateOctaveLeds();
+}
+void midircv_subOctaveOffset(void)
+{
+  if(octaveOffsetLocalKeyboard>(-2))
+    octaveOffsetLocalKeyboard--;
+
+  updateOctaveLeds();
+}
 
 static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,MidiInfo* pMidiInfo)
 {
@@ -92,7 +116,28 @@ static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,Mi
   {
     if(pMidiInfo->note == 72) // keyboard fix (this keyboard is broken and last key is 72 instead 60). comment for normal key
       pMidiInfo->note = 60;
+
+    // octave offset
+    pMidiInfo->note = pMidiInfo->note + (octaveOffsetLocalKeyboard*12);  
   }
   
+}
+
+static void updateOctaveLeds(void)
+{
+  outs_set(OUT_LED_OCTAVE_N2,0);
+  outs_set(OUT_LED_OCTAVE_N1,0);
+  outs_set(OUT_LED_OCTAVE_0,0);
+  outs_set(OUT_LED_OCTAVE_P1,0);
+  outs_set(OUT_LED_OCTAVE_P2,0);
+  
+  switch(octaveOffsetLocalKeyboard)
+  {
+    case -2: outs_set(OUT_LED_OCTAVE_N2,1);break;
+    case -1: outs_set(OUT_LED_OCTAVE_N1,1);break;
+    case 0: outs_set(OUT_LED_OCTAVE_0,1);break;
+    case 1: outs_set(OUT_LED_OCTAVE_P1,1);break;
+    case 2: outs_set(OUT_LED_OCTAVE_P2,1);break;    
+  }
 }
 

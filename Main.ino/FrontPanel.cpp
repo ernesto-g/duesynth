@@ -4,6 +4,9 @@
 #include "WindowsManager.h"
 #include "AdsrManager.h"
 #include "Arduino.h"
+#include "MIDIReception.h"
+#include "Outs.h"
+
 
 #define AN_MAX_VALUE  4095
 
@@ -12,40 +15,86 @@
 #define FP_STATE_IDLE           0
 #define FP_STATE_GET_LCD_VALUE  1
 #define FP_STATE_GET_AN_VALUE   2
+#define FP_STATE_READ_INS       3
+
+
+#define PIN_SW_SUB_WAVEFORM 20
+#define PIN_SW_SUB_OCTAVE   21
+#define PIN_SW_OCTAVE_NEG   41
+#define PIN_SW_SEQ_TAP_REST 42
+#define PIN_SW_OCTAVE_POS   43
+
+#define SW_STATE_IDLE         0
+#define SW_STATE_WAIT         1
+#define SW_STATE_WAIT_RELEASE 2
+#define SW_STATE_WAIT2        3
+
+#define TIMEOUT_IGNORE_SW     50
+
 
 
 static int state;
 static int indexControl;
 static volatile int tickCounter;
+static volatile int tickCounterSw;
+static int swState;
 
 static void assignMidiValue(int indexControl,int midiValue);
 static void assignAnalogValue(int indexControl,int analogValue);
 static unsigned char getDiscrete5ValuesFromSwitchSelector(uint16_t analogValue);
+static void switchesStateMachine(void);
+
 
 static const signed short ANALOG512_TO_SIGNED_MIDI_TABLE[512] PROGMEM = {-64,-64,-63,-63,-63,-63,-62,-62,-62,-61,-61,-61,-61,-60,-60,-60,-60,-59,-59,-59,-58,-58,-58,-58,-57,-57,-57,-56,-56,-56,-56,-55,-55,-55,-54,-54,-54,-54,-53,-53,-53,-53,-52,-52,-52,-51,-51,-51,-51,-50,-50,-50,-49,-49,-49,-49,-48,-48,-48,-48,-47,-47,-47,-46,-46,-46,-46,-45,-45,-45,-44,-44,-44,-44,-43,-43,-43,-42,-42,-42,-42,-41,-41,-41,-41,-40,-40,-40,-39,-39,-39,-39,-38,-38,-38,-37,-37,-37,-37,-36,-36,-36,-35,-35,-35,-35,-34,-34,-34,-34,-33,-33,-33,-32,-32,-32,-32,-31,-31,-31,-30,-30,-30,-30,-29,-29,-29,-29,-28,-28,-28,-27,-27,-27,-27,-26,-26,-26,-25,-25,-25,-25,-24,-24,-24,-23,-23,-23,-23,-22,-22,-22,-22,-21,-21,-21,-20,-20,-20,-20,-19,-19,-19,-18,-18,-18,-18,-17,-17,-17,-16,-16,-16,-16,-15,-15,-15,-15,-14,-14,-14,-13,-13,-13,-13,-12,-12,-12,-11,-11,-11,-11,-10,-10,-10,-10,-9,-9,-9,-8,-8,-8,-8,-7,-7,-7,-6,-6,-6,-6,-5,-5,-5,-4,-4,-4,-4,-3,-3,-3,-3,-2,-2,-2,-1,-1,-1,-1,-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,3,3,3,3,4,4,4,4,5,5,5,6,6,6,6,7,7,7,8,8,8,8,9,9,9,10,10,10,10,11,11,11,11,12,12,12,13,13,13,13,14,14,14,15,15,15,15,16,16,16,16,17,17,17,18,18,18,18,19,19,19,20,20,20,20,21,21,21,22,22,22,22,23,23,23,23,24,24,24,25,25,25,25,26,26,26,27,27,27,27,28,28,28,29,29,29,29,30,30,30,30,31,31,31,32,32,32,32,33,33,33,34,34,34,34,35,35,35,35,36,36,36,37,37,37,37,38,38,38,39,39,39,39,40,40,40,41,41,41,41,42,42,42,42,43,43,43,44,44,44,44,45,45,45,46,46,46,46,47,47,47,48,48,48,48,49,49,49,49,50,50,50,51,51,51,51,52,52,52,53,53,53,53,54,54,54,54,55,55,55,56,56,56,56,57,57,57,58,58,58,58,59,59,59,60,60,60,60,61,61,61,61,62,62,62,63,63,63,63,64,64};
+
 
 
 void fp_sysTick(void)
 {
   if(tickCounter>0)
     tickCounter--;
+
+  if(tickCounterSw>0)
+    tickCounterSw--;    
 }
+
+
+
 
 void fp_init(void)
 {
     state = FP_STATE_IDLE;
     indexControl=0;
     tickCounter=SET_FP_ITEM_PERIOD;
+
+    swState =  SW_STATE_IDLE;
+
+    outs_init(); 
+
+    pinMode(PIN_SW_SUB_WAVEFORM, INPUT);
+    pinMode(PIN_SW_SUB_OCTAVE, INPUT);
+    
+    pinMode(PIN_SW_OCTAVE_NEG, INPUT_PULLUP);
+    pinMode(PIN_SW_OCTAVE_POS, INPUT_PULLUP);
+    pinMode(PIN_SW_SEQ_TAP_REST, INPUT_PULLUP);
+
+    midircv_resetOctaveOffset();
 }
 
 
 void fp_stateMachine(void)
-{
+{ 
+  outs_stateMachine();
+   
   if(tickCounter>0)
     return;
 
   tickCounter=SET_FP_ITEM_PERIOD;
+
+  switchesStateMachine();
   
+
+    
     switch(state)
     {
        case FP_STATE_IDLE:
@@ -74,14 +123,116 @@ void fp_stateMachine(void)
           indexControl++;
           if(indexControl>=16)
           {
-              state = FP_STATE_IDLE;
+              state = FP_STATE_READ_INS;
           }
+          break;
+       }
+       case FP_STATE_READ_INS:
+       {            
+          if(digitalRead(PIN_SW_SUB_WAVEFORM))
+          {
+              // triangular
+          }
+          else
+          {
+            // square
+          }
+          if(digitalRead(PIN_SW_SUB_OCTAVE))
+              dco_setSubOctave(1); 
+          else
+              dco_setSubOctave(0);           
+        
+          state = FP_STATE_IDLE;
           break;
        }
     }
 
-    // set switches states
-    // void dco_setSubOctave(int flag2Octv) 
+}
+
+
+
+static void switchesStateMachine(void)
+{
+    static int sw;
+    
+    switch(swState)
+    {
+      case SW_STATE_IDLE:
+      {
+        if(digitalRead(PIN_SW_SEQ_TAP_REST)==0)
+        {
+          //notify to sequencer manager
+          // TODO
+          // Serial.write("TAP\n");
+          swState = SW_STATE_WAIT;
+          sw=0;
+          tickCounterSw = TIMEOUT_IGNORE_SW;
+        }
+        else if(digitalRead(PIN_SW_OCTAVE_NEG)==0)
+        {
+          midircv_subOctaveOffset();
+          //Serial.write("OCTAVE NEG\n");
+          swState = SW_STATE_WAIT;
+          sw=1;
+          tickCounterSw = TIMEOUT_IGNORE_SW;
+        }
+        else if(digitalRead(PIN_SW_OCTAVE_POS)==0)
+        {
+          midircv_addOctaveOffset();
+          //Serial.write("OCTAVE POS\n");
+          swState = SW_STATE_WAIT;
+          sw=2;
+          tickCounterSw = TIMEOUT_IGNORE_SW;
+        }                
+        break;
+      }
+      case SW_STATE_WAIT:
+      {
+        if(tickCounterSw==0)
+          swState = SW_STATE_WAIT_RELEASE;
+        break;
+      }
+      case SW_STATE_WAIT_RELEASE:
+      {
+        switch(sw)
+        {
+          case 0:
+          {
+            if(digitalRead(PIN_SW_SEQ_TAP_REST)==1)
+            {
+                swState = SW_STATE_WAIT2;
+                tickCounterSw = TIMEOUT_IGNORE_SW; 
+            }
+            break;
+          }
+          case 1:
+          {
+            if(digitalRead(PIN_SW_OCTAVE_NEG)==1)
+            {
+                swState = SW_STATE_WAIT2;
+                tickCounterSw = TIMEOUT_IGNORE_SW; 
+            }            
+            break;
+          }
+          case 2:
+          {
+            if(digitalRead(PIN_SW_OCTAVE_POS)==1)
+            {
+                swState = SW_STATE_WAIT2;
+                tickCounterSw = TIMEOUT_IGNORE_SW; 
+            }            
+            break;
+          }
+        }
+        break;
+      }
+      case SW_STATE_WAIT2:
+      {
+        if(tickCounterSw==0)
+          swState = SW_STATE_IDLE;     
+        break;
+      }
+    }
 }
 
 
