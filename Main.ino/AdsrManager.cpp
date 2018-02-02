@@ -64,7 +64,8 @@ void adsr_init(void)
     attackRateCounter[i]=attackRate[i];
     decayRateCounter[i]=decayRate[i];
     releaseRateCounter[i]=releaseRate[i];
-    
+
+    setAdsrPwmValue(i,adsrValue[i]);
   }
 
   flagEnvLowSpeed=0; // leer de entrada
@@ -91,14 +92,21 @@ void adsr_triggerEvent(int vel) // vel can be used to modulate attack rate
   int i;
   for(i=0; i<ADSR_LEN; i++)
   {
+    /* // this way generates a clip when a second key is pressed
     if(state[i]==STATE_SUSTAIN)
     {
-      // pongo a cero el valor
+      // restrat adsr value
       adsrValue[i]=0;
       setAdsrPwmValue(i,adsrValue[i]);
     }
     attackRateCounter[i]=attackRate[i];
     state[i] = STATE_ATTACK;
+    */
+    if(state[i]!=STATE_SUSTAIN)
+    {
+      attackRateCounter[i]=attackRate[i];
+      state[i] = STATE_ATTACK;
+    }
   }
 }
 

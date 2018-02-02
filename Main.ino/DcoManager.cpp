@@ -90,6 +90,7 @@ static unsigned int TABLE_SQUARE_FREQ[] = {2618, 2471, 2333, 2202, 2078, 1961, 1
 #include "WaveTables.cpp"
 
 
+
 void dcoUpdateMono(void)
 {
   //digitalWrite(21, HIGH);
@@ -601,15 +602,23 @@ void dco_setMIDInote(int note)
     currentNoteCounterValue = currentNoteCounterValueOriginal;
 
     // set square
+    squareCounter=0;
     dco_updatePwmValueForSquare(); // update current pwm value for new freq note
 
     // set saw
+    sawCounters[0]=0;
+    sawCounters[1]=0;
+    sawCounters[2]=0;
     dco_updatePhaseForUltrasaw(); // update current pwm value
 
     // set triangle
+    triangleCounter=0;
+    triangleDelta=1;
     dco_updateMetValueForTriangle(); // update current metalizer value 
     
     // set sub
+    squareCounterSub=0;
+    triangleDeltaSub=1;    
     dco_updateNoteForSubOsc(); // update current note for sub oscillator
   }
 
