@@ -4,6 +4,13 @@
 #include "MIDIManager.h"
 #include "Outs.h"
 
+
+// USB MIDI lib
+#include "MIDIUSB/MIDIUSB.h"
+#include "MIDIUSB/MIDIUSB.cpp"
+//_____________
+
+
 #define MIDI_BUFFER_LEN   32
 #define FROM_INTERNAL_KEYBOARD  0
 #define FROM_EXTERNAL_KEYBOARD  1
@@ -119,8 +126,15 @@ static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,Mi
 
     // octave offset
     pMidiInfo->note = pMidiInfo->note + (octaveOffsetLocalKeyboard*12);  
+    pMidiInfo->note+= 12; // center octave for internal keyboard  
   }
-  
+
+  // Send by USB MIDI
+  midiEventPacket_t packet = {(pMidiInfo->cmd>>4), pMidiInfo->cmd | pMidiInfo->channel, pMidiInfo->note, pMidiInfo->vel};
+  MidiUSB.sendMIDI(packet);
+  MidiUSB.flush();
+  //_________________
+      
 }
 
 static void updateOctaveLeds(void)

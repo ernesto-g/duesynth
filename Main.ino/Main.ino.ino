@@ -8,6 +8,7 @@
 #include "AdsrManager.h"
 
 
+
 // LCD and Touch libraries
 #include "UTFT/UTFT.h"
 #include "Fonts.h"
@@ -20,6 +21,7 @@ URTouch  myTouch( 10, 5, 4, 3, 2);
 
 #include "WindowsManager.h"
 #include "FrontPanel.h"
+
 
 void sysTick()
 {
@@ -86,5 +88,5 @@ void loop() {
   fp_stateMachine();
 
   
-    
+
 }
