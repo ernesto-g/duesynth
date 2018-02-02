@@ -21,6 +21,7 @@ void dco_lfoSetFrontPanelPwmAndMetForSquareAndTri(int midiValue);
 
 // Sub osc settings
 void dco_setSubOctave(int flag2Octv);
+void dco_setSubWaveForm(int type);
 //_____________
 
 // Ultra saw settings

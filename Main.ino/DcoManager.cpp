@@ -63,6 +63,9 @@ static volatile int ultraSawPhase1InPwmScale;
 
 static volatile unsigned int squareCounterSub;
 static volatile int flagSubOctave;
+static volatile int subOscWaveform;
+static volatile signed int triangleDeltaSub;
+
 
 
 static volatile int lfoCounter;
@@ -112,7 +115,7 @@ void dcoUpdateMono(void)
     squareCounter = 0;
   }
 
-  // sub (square)
+  // sub (square or triangle)
   unsigned int currentNoteCounterValueHalfSub;
   unsigned int currentNoteCounterValueSub;
   if(flagSubOctave)
@@ -126,18 +129,53 @@ void dcoUpdateMono(void)
     currentNoteCounterValueSub = currentNoteCounterValue*2;    
   }
   squareCounterSub++;
-  if (squareCounterSub < currentNoteCounterValueHalfSub)
+  if(subOscWaveform==0)
   {
-    accSub -= (PWM_MAX_VALUE / 2) ;
-  }
-  else if (squareCounterSub < currentNoteCounterValueSub)
-  {
-    accSub += (PWM_MAX_VALUE / 2) ;
+      // sub osc square
+      if (squareCounterSub < currentNoteCounterValueHalfSub)
+      {
+        accSub -= (PWM_MAX_VALUE / 2) ;
+      }
+      else if (squareCounterSub < currentNoteCounterValueSub)
+      {
+        accSub += (PWM_MAX_VALUE / 2) ;
+      }
+      else
+      {
+        squareCounterSub = 0;
+      }
   }
   else
   {
-    squareCounterSub = 0;
+      // sub osc triangle
+
+      if (triangleDeltaSub == 1)
+        {
+          // positive
+          accSub = ((2 * PWM_MAX_VALUE) * squareCounterSub) / (currentNoteCounterValueSub);
+          if (squareCounterSub < (currentNoteCounterValueSub >> 1))
+          {
+          }
+          else
+          {
+            triangleDeltaSub = 0;
+          }
+        }
+        else
+        {
+          // negative
+          accSub = (2 * PWM_MAX_VALUE) - ((2 * PWM_MAX_VALUE) * squareCounterSub) / (currentNoteCounterValueSub);
+          if (squareCounterSub < currentNoteCounterValueSub) // paso la mitad
+          {
+          }
+          else
+          {
+            triangleDeltaSub = 1;
+            squareCounterSub = 0;
+          }
+        }      
   }
+  //_________________________________________________________________________
 
   // saw
   for (i = 0; i < 3; i++)
@@ -431,6 +469,7 @@ void dco_init(void)
   ultraSawPhase0InPwmScale=0;
   ultraSawPhase1InPwmScale=0;
 
+  subOscWaveform=0;
 
   Timer3.attachInterrupt(dcoUpdateMono).setFrequency(72000).start(); // freq update: 72Khz
   Timer4.attachInterrupt(dcoUpdateLFO).setFrequency(1536).start(); // freq update: 1536Hz
@@ -544,6 +583,10 @@ void dco_setSubOctave(int flag2Octv)
 void dco_updateNoteForSubOsc(void)
 {
   // sub osc note is calculated in timer interrupt
+}
+void dco_setSubWaveForm(int type)
+{
+  subOscWaveform=type;
 }
 //____________________________________________________________________________________________________
 

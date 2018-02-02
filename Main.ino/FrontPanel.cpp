@@ -132,10 +132,12 @@ void fp_stateMachine(void)
           if(digitalRead(PIN_SW_SUB_WAVEFORM))
           {
               // triangular
+              dco_setSubWaveForm(1);
           }
           else
           {
-            // square
+              // square
+              dco_setSubWaveForm(0);
           }
           if(digitalRead(PIN_SW_SUB_OCTAVE))
               dco_setSubOctave(1); 
