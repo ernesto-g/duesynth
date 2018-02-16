@@ -1,5 +1,8 @@
 # MINIBRUTE Clone with Arduino DUE
 
+![alt text](https://raw.githubusercontent.com/ernesto-g/duesynth/master/Pictures/6.jpg)
+
+
 Supported features:
   - Pitch Wheel
   - Mod Wheel
