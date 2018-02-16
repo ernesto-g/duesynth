@@ -34,7 +34,15 @@ Supported features:
     - MIDI
     - USB MIDI
 	
-	
+Still not implemented features:  
+  - Vibrato
+  - Sequencer
+  - Configuration screen
+  - Sequencer screen
+  - MIDI In
+  - MIDI Out
+
+  
 Not Supported features:
   - Brute factor
   - Fine tune
@@ -52,3 +60,5 @@ This project contains:
   - Images for LCD
   - Front and back panel blueprints
   
+  
+
