@@ -52,8 +52,11 @@ Not Supported features:
   - Aftertouch
   - Arpeggiator (was changed by microbrute sequencer)
 	  
-		
-This project contains:
+## Block diagram
+
+![alt text](https://raw.githubusercontent.com/ernesto-g/duesynth/master/OtherFiles/Blocks_Diagram.jpg)
+  
+##This project contains:
   - Arduino DUE Firmware
   - Schematics 
   - Pictures   
