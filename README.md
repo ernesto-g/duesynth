@@ -56,7 +56,7 @@ Not Supported features:
 
 ![alt text](https://raw.githubusercontent.com/ernesto-g/duesynth/master/OtherFiles/Blocks_Diagram.jpg)
   
-##This project contains:
+### This project contains:
   - Arduino DUE Firmware
   - Schematics 
   - Pictures   
