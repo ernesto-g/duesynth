@@ -43,6 +43,7 @@ static unsigned int indexBufferInternal;
 static unsigned int indexBufferExternal;
 static int octaveOffsetLocalKeyboard;
 
+static unsigned char midiOutChannel;
 
 void midircv_sysTick(void)
 {
@@ -63,6 +64,8 @@ void midircv_init(void)
 
   octaveOffsetLocalKeyboard=0;
   updateOctaveLeds();
+
+  midiOutChannel = 0; // MIDI OUT CHANNEL FOR INTERNAL KEYBOARD
 }
 
 void midircv_stateMachine(void)
@@ -144,6 +147,19 @@ static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,Mi
     // octave offset
     pMidiInfo->note = pMidiInfo->note + (octaveOffsetLocalKeyboard*12);  
     pMidiInfo->note+= 12; // center octave for internal keyboard  
+
+    // send to MIDI OUT
+    unsigned char b = pMidiInfo->cmd | midiOutChannel;
+    Serial2.write(&b,1); 
+    Serial2.write(&(pMidiInfo->note),1);
+    Serial2.write(&pData[2],1);
+    //_________________
+  }
+  else
+  {
+    // send to MIDI OUT
+    Serial2.write(pData,len);
+    //_________________        
   }
 
   // Send by USB MIDI
