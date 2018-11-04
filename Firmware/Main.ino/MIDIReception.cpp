@@ -20,6 +20,7 @@
 #include "MIDIReception.h"
 #include "MIDIManager.h"
 #include "Outs.h"
+#include "SequencerManager.h"
 
 
 // USB MIDI lib
@@ -117,6 +118,7 @@ void midircv_addOctaveOffset(void)
     octaveOffsetLocalKeyboard++;
 
   updateOctaveLeds();
+  midi_clearAllKeysPressed();
 }
 void midircv_subOctaveOffset(void)
 {
@@ -124,6 +126,7 @@ void midircv_subOctaveOffset(void)
     octaveOffsetLocalKeyboard--;
 
   updateOctaveLeds();
+  midi_clearAllKeysPressed();
 }
 
 static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,MidiInfo* pMidiInfo)
@@ -167,7 +170,10 @@ static void processMidiPacket(unsigned char* pData, int len, int fromKeyboard,Mi
   MidiUSB.sendMIDI(packet);
   MidiUSB.flush();
   //_________________
-      
+
+  // Send to sequencer manager
+  seq_keyEvent(pMidiInfo);
+  //__________________________      
 }
 
 static void updateOctaveLeds(void)

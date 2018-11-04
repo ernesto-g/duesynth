@@ -23,6 +23,7 @@
 #include "MIDIReception.h"
 #include "MIDIManager.h"
 #include "AdsrManager.h"
+#include "SequencerManager.h"
 
 
 
@@ -45,6 +46,7 @@ void sysTick()
   midircv_sysTick();
   win_sysTick();
   fp_sysTick();
+  seq_sysTick();
 }
 
 void setup() {
@@ -93,6 +95,9 @@ void setup() {
   wm_showBoot();
      
   fp_init();
+
+  seq_init();
+
 }
 
 void loop() {
@@ -104,6 +109,6 @@ void loop() {
   midircv_stateMachine();
   fp_stateMachine();
 
-  
+  seq_loop();  
 
 }

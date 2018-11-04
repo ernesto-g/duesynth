@@ -164,6 +164,20 @@ void midi_analizeMidiInfo(MidiInfo * pMidiInfo)
 }
 
 
+void midi_clearAllKeysPressed(void)
+{
+  byte i;
+  for(i=0; i<KEYS_PRESSED_LEN; i++)
+  {
+    if(keysPressed[i].flagFree==0)
+    {
+        keysPressed[i].flagFree=1;
+    }
+  } 
+
+  dco_setGate(0); // gate=0
+}
+
 /// Keys management
 static byte saveKey(byte note)
 {

@@ -23,6 +23,7 @@
 #include "Arduino.h"
 #include "MIDIReception.h"
 #include "Outs.h"
+#include "SequencerManager.h"
 
 
 #define AN_MAX_VALUE  4095
@@ -181,8 +182,7 @@ static void switchesStateMachine(void)
         if(digitalRead(PIN_SW_SEQ_TAP_REST)==0)
         {
           //notify to sequencer manager
-          // TODO
-          // Serial.write("TAP\n");
+          seq_tapRestEvent();
           swState = SW_STATE_WAIT;
           sw=0;
           tickCounterSw = TIMEOUT_IGNORE_SW;
@@ -332,8 +332,16 @@ static void assignAnalogValue(int indexControl,int analogValue)
       // 0 : play
       // 2020: off
       // 4070: record
+      if(analogValue<1000)
+        seq_setState(SEQ_STATE_PLAY); //PLAY
+      if(analogValue>=1000 && analogValue<3000)
+        seq_setState(SEQ_STATE_OFF); //OFF
+      if(analogValue>=3000)
+        seq_setState(SEQ_STATE_RECORD); //RECORD      
       break; 
     case 15: // Sequencer rate
+      int bpm = ((270*analogValue)/AN_MAX_VALUE)+30; // from 30 to 300
+      seq_setBpmRate(bpm);
       break; 
 
 
